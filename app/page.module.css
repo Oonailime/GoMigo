@@ -216,12 +216,22 @@
 
 .travelForm {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+  align-items: start;
+}
+
+.formColumn {
+  min-width: 0;
+}
+
+.formFullWidth {
+  grid-column: 1 / -1;
 }
 
 .fieldGroup {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .fieldLabel {
@@ -231,6 +241,7 @@
 
 .inputShell {
   position: relative;
+  min-width: 0;
 }
 
 .dropdownTrigger {
@@ -246,6 +257,7 @@
   color: var(--text);
   cursor: pointer;
   transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+  min-height: 58px;
 }
 
 .dropdownTrigger:hover,
@@ -281,6 +293,7 @@
 .textInput,
 .dateInput {
   padding: 16px 18px;
+  min-height: 58px;
 }
 
 .dateInput {
@@ -320,6 +333,8 @@
   background: var(--panelStrong);
   box-shadow: var(--shadow);
   z-index: 3;
+  max-height: 260px;
+  overflow-y: auto;
 }
 
 .autocompleteItem {
@@ -340,34 +355,54 @@
 .fieldHint {
   color: var(--soft);
   font-size: 0.82rem;
+  line-height: 1.4;
+  min-height: 18px;
 }
 
-.dateRangeShell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
-  align-items: stretch;
+.dateRangeTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--fieldBg);
-  overflow: hidden;
+  color: var(--text);
+  cursor: pointer;
   transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+  min-height: 84px;
 }
 
-.dateRangeShell:focus-within {
+.dateRangeTrigger:hover,
+.dateRangeTrigger:focus-visible {
   border-color: rgba(78, 199, 176, 0.5);
   background: var(--fieldBgFocus);
   transform: translateY(-1px);
+  outline: none;
 }
 
-.dateRangeSlot {
+.dateRangeSummary {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.dateSummaryBlock {
   display: grid;
-  gap: 8px;
-  padding: 14px 18px;
+  gap: 6px;
+  text-align: left;
+  min-width: 0;
+  flex: 1 1 0;
 }
 
-.dateRangeDivider {
-  width: 1px;
-  background: var(--line);
+.dateRangeArrow {
+  color: var(--soft);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .dateCardLabel {
@@ -377,32 +412,216 @@
   letter-spacing: 0.08em;
 }
 
-.dateInput::-webkit-calendar-picker-indicator {
+.dateDisplayValue {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dateDurationBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(78, 199, 176, 0.12);
+  color: var(--accentStrong);
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.datePickerPanel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: min(100%, 720px);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--panelStrong);
+  box-shadow: var(--shadow);
+  z-index: 4;
+}
+
+.datePickerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.datePickerTitle {
+  margin: 6px 0 0;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.datePickerFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.datePickerClose {
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: var(--accent);
+  color: var(--buttonText);
   cursor: pointer;
 }
 
-.dateInput::-webkit-datetime-edit {
-  color: var(--text);
+.calendar {
+  display: grid;
+  gap: 14px;
+  position: relative;
+  padding-bottom: 54px;
 }
 
-.dateInput::-webkit-datetime-edit-text,
-.dateInput::-webkit-datetime-edit-month-field,
-.dateInput::-webkit-datetime-edit-day-field,
-.dateInput::-webkit-datetime-edit-year-field {
-  color: var(--text);
+.calendarMonths {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.dateInput {
+.calendarMonth {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--fieldBg);
+}
+
+.calendarMonthCaption {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+}
+
+.calendarCaptionLabel {
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.calendarNav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding-top: 10px;
+}
+
+.calendarNavButton {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.calendarNavButton:hover {
+  border-color: rgba(78, 199, 176, 0.45);
+  background: rgba(78, 199, 176, 0.12);
+  transform: translateY(-1px);
+}
+
+.calendarChevron {
+  width: 16px;
+  height: 16px;
+}
+
+.calendarWeekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: 8px;
+}
+
+.calendarWeekday {
+  text-align: center;
+  color: var(--soft);
+  font-size: 0.8rem;
+  text-transform: lowercase;
+}
+
+.calendarWeek {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendarDay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;
+}
+
+.calendarDayButton {
+  width: 38px;
+  height: 38px;
   border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.calendarDayButton:hover {
+  background: rgba(78, 199, 176, 0.12);
+}
+
+.calendarSelected .calendarDayButton,
+.calendarRangeStart .calendarDayButton,
+.calendarRangeEnd .calendarDayButton {
+  background: var(--accent);
+  color: var(--buttonText);
+}
+
+.calendarRangeMiddle .calendarDayButton {
+  background: rgba(78, 199, 176, 0.18);
+  color: var(--text);
   border-radius: 0;
-  background: transparent;
-  padding: 0;
 }
 
-.dateInput:focus {
-  border: 0;
-  background: transparent;
-  transform: none;
+.calendarRangeStart .calendarDayButton {
+  border-radius: 12px 0 0 12px;
+}
+
+.calendarRangeEnd .calendarDayButton {
+  border-radius: 0 12px 12px 0;
+}
+
+.calendarOutside .calendarDayButton {
+  color: var(--soft);
+  opacity: 0.45;
+}
+
+.calendarToday .calendarDayButton {
+  border: 1px solid rgba(78, 199, 176, 0.4);
+}
+
+.calendarDisabled .calendarDayButton {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .buttonPrimary,
@@ -413,6 +632,7 @@
   border: 1px solid transparent;
   cursor: pointer;
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+  min-height: 56px;
 }
 
 .buttonPrimary:hover,
@@ -438,6 +658,11 @@
   background: var(--panelStrong);
   color: var(--text);
   border-color: var(--line);
+}
+
+.buttonSecondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 .socialIcon {
@@ -504,12 +729,23 @@
     grid-template-columns: 1fr;
   }
 
-  .dateRangeShell {
+  .travelForm {
     grid-template-columns: 1fr;
   }
 
-  .dateRangeDivider {
-    width: auto;
-    height: 1px;
+  .dateRangeTrigger,
+  .dateRangeSummary,
+  .datePickerHeader,
+  .datePickerFooter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .calendarMonths {
+    grid-template-columns: 1fr;
+  }
+
+  .datePickerPanel {
+    width: 100%;
   }
 }

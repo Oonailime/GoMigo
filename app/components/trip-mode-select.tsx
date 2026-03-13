@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "../page.module.css";
 
 type TripModeOption = {
@@ -20,16 +20,28 @@ export function TripModeSelect({
   onChange,
 }: TripModeSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const selectedOption = useMemo(
     () => options.find((option) => option.value === value) ?? options[0],
     [options, value],
   );
 
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
   return (
     <div className={styles.fieldGroup}>
       <span className={styles.fieldLabel}>Modo da viagem</span>
-      <div className={styles.inputShell}>
+      <div className={styles.inputShell} ref={containerRef}>
         <button
           type="button"
           className={styles.dropdownTrigger}
@@ -60,7 +72,7 @@ export function TripModeSelect({
         ) : null}
       </div>
       <span className={styles.fieldHint}>
-        Escolha se a busca foca carona, bate-volta ou roteiro completo.
+        Defina o tipo de experiencia que deseja montar.
       </span>
     </div>
   );

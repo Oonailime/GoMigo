@@ -13,6 +13,7 @@ type ThemeMode = "dark" | "light";
 
 export function TravelLandingPage() {
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
+  const [originCity, setOriginCity] = useState("");
   const [destinationCity, setDestinationCity] = useState("");
   const [tripMode, setTripMode] = useState(BRAZILIAN_TRIP_MODES[0].value);
   const [travelStartDate, setTravelStartDate] = useState("");
@@ -102,33 +103,57 @@ export function TravelLandingPage() {
             <ThemeToggle currentTheme={themeMode} onThemeChange={setThemeMode} />
           </div>
 
-          <form className={styles.travelForm}>
-            <CityAutocomplete
-              label="Destino principal"
-              value={destinationCity}
-              onChange={setDestinationCity}
-              placeholder="Ex.: Rio de Janeiro"
-              helperText="Busca municipios do Brasil em tempo real."
-            />
+          <form
+            className={styles.travelForm}
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <div className={styles.formColumn}>
+              <CityAutocomplete
+                label="Cidade de partida"
+                value={originCity}
+                onChange={setOriginCity}
+                placeholder="Ex.: Sao Paulo"
+                helperText="Ponto inicial da viagem."
+              />
+            </div>
 
-            <TripModeSelect
-              options={BRAZILIAN_TRIP_MODES}
-              value={tripMode}
-              onChange={setTripMode}
-            />
+            <div className={styles.formColumn}>
+              <CityAutocomplete
+                label="Destino principal"
+                value={destinationCity}
+                onChange={setDestinationCity}
+                placeholder="Ex.: Rio de Janeiro"
+                helperText="Busque municipios do Brasil."
+              />
+            </div>
 
-            <DateRangeField
-              startDate={travelStartDate}
-              endDate={travelEndDate}
-              onStartDateChange={handleTravelStartDateChange}
-              onEndDateChange={setTravelEndDate}
-            />
+            <div className={styles.formColumn}>
+              <TripModeSelect
+                options={BRAZILIAN_TRIP_MODES}
+                value={tripMode}
+                onChange={setTripMode}
+              />
+            </div>
 
-            <button type="submit" className={styles.buttonPrimary}>
-              Buscar opcoes
+            <div className={styles.formFullWidth}>
+              <DateRangeField
+                startDate={travelStartDate}
+                endDate={travelEndDate}
+                onStartDateChange={handleTravelStartDateChange}
+                onEndDateChange={setTravelEndDate}
+              />
+            </div>
+
+            <button
+              type="button"
+              className={`${styles.buttonPrimary} ${styles.formFullWidth}`}
+            >
+              Buscar opcoes em breve
             </button>
 
-            <SocialLoginButtons />
+            <div className={styles.formFullWidth}>
+              <SocialLoginButtons />
+            </div>
           </form>
 
           <p className={styles.footerText}>
