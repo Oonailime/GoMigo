@@ -43,7 +43,7 @@
 
 .surface {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--line);
   border-radius: 28px;
   background: var(--panel);
@@ -448,6 +448,14 @@
   background: var(--panelStrong);
   box-shadow: var(--shadow);
   z-index: 4;
+}
+
+@media (max-width: 1280px) {
+  .datePickerPanel {
+    position: static;
+    width: 100%;
+    margin-top: 10px;
+  }
 }
 
 .datePickerHeader {
