@@ -1,7 +1,7 @@
 .pageShell {
   --bg: #07111f;
-  --panel: rgba(12, 24, 40, 0.84);
-  --panelStrong: rgba(18, 34, 55, 0.96);
+  --panel: rgba(12, 24, 40, 0.92);
+  --panelStrong: rgba(18, 34, 55, 0.985);
   --line: rgba(154, 181, 214, 0.18);
   --text: #f4f7fb;
   --muted: rgba(228, 236, 248, 0.76);
@@ -9,8 +9,8 @@
   --accent: #4ec7b0;
   --accentStrong: #8ae0cf;
   --buttonText: #04131b;
-  --fieldBg: rgba(5, 15, 28, 0.76);
-  --fieldBgFocus: rgba(8, 20, 36, 0.92);
+  --fieldBg: rgba(5, 15, 28, 0.9);
+  --fieldBgFocus: rgba(8, 20, 36, 0.97);
   --shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
   min-height: 100vh;
   display: grid;
@@ -27,8 +27,8 @@
 
 .pageShell[data-theme="light"] {
   --bg: #f4efe6;
-  --panel: rgba(255, 250, 244, 0.88);
-  --panelStrong: rgba(255, 255, 255, 0.96);
+  --panel: rgba(255, 250, 244, 0.95);
+  --panelStrong: rgba(255, 255, 255, 0.99);
   --line: rgba(77, 61, 38, 0.14);
   --text: #2b2218;
   --muted: rgba(43, 34, 24, 0.72);
@@ -36,8 +36,8 @@
   --accent: #146b63;
   --accentStrong: #0d4d47;
   --buttonText: #f7fbfa;
-  --fieldBg: rgba(255, 255, 255, 0.82);
-  --fieldBgFocus: rgba(255, 255, 255, 0.98);
+  --fieldBg: rgba(255, 255, 255, 0.93);
+  --fieldBgFocus: rgba(255, 255, 255, 1);
   --shadow: 0 24px 60px rgba(80, 58, 29, 0.16);
 }
 
@@ -55,7 +55,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 52%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), transparent 52%);
   pointer-events: none;
 }
 
@@ -142,7 +142,7 @@
   padding: 20px;
   border-radius: 22px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .statValue {
@@ -197,7 +197,7 @@
   padding: 4px;
   border-radius: 999px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .themeToggleButton {
@@ -537,7 +537,7 @@
   height: 38px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text);
   cursor: pointer;
   display: inline-flex;
