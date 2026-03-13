@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { DayPicker, type DateRange } from "react-day-picker";
-import styles from "../page.module.css";
+import fieldStyles from "../page.module.css";
+import styles from "./date-range-field.module.css";
+import { useDismissibleLayer } from "./use-dismissible-layer";
 
 type DateRangeFieldProps = {
   startDate: string;
@@ -31,16 +33,11 @@ export function DateRangeField({
     };
   }, [endDate, startDate]);
 
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        setIsCalendarOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, []);
+  useDismissibleLayer({
+    isOpen: isCalendarOpen,
+    containerRef,
+    onDismiss: () => setIsCalendarOpen(false),
+  });
 
   const handleSelect = (range: DateRange | undefined) => {
     onStartDateChange(range?.from ? toDateInputValue(range.from) : "");
@@ -48,44 +45,46 @@ export function DateRangeField({
   };
 
   return (
-    <div className={styles.fieldGroup}>
-      <span className={styles.fieldLabel}>Periodo da viagem</span>
-      <div className={styles.inputShell} ref={containerRef}>
+    <div className={fieldStyles.fieldGroup}>
+      <span className={fieldStyles.fieldLabel}>Periodo da viagem</span>
+      <div className={fieldStyles.inputShell} ref={containerRef}>
         <button
           type="button"
-          className={styles.dateRangeTrigger}
+          className={styles.trigger}
+          aria-haspopup="dialog"
+          aria-expanded={isCalendarOpen}
           onClick={() => setIsCalendarOpen((currentValue) => !currentValue)}
         >
-          <div className={styles.dateRangeSummary}>
-            <div className={styles.dateSummaryBlock}>
-              <span className={styles.dateCardLabel}>Ida</span>
-              <span className={styles.dateDisplayValue}>
+          <div className={styles.summary}>
+            <div className={styles.summaryBlock}>
+              <span className={fieldStyles.dateCardLabel}>Ida</span>
+              <span className={styles.displayValue}>
                 {formatDateLabel(startDate, "Ida")}
               </span>
             </div>
-            <span className={styles.dateRangeArrow} aria-hidden="true">
+            <span className={styles.arrow} aria-hidden="true">
               /
             </span>
-            <div className={styles.dateSummaryBlock}>
-              <span className={styles.dateCardLabel}>Volta</span>
-              <span className={styles.dateDisplayValue}>
+            <div className={styles.summaryBlock}>
+              <span className={fieldStyles.dateCardLabel}>Volta</span>
+              <span className={styles.displayValue}>
                 {formatDateLabel(endDate, "Volta")}
               </span>
             </div>
           </div>
-          <span className={styles.dateDurationBadge}>
+          <span className={styles.durationBadge}>
             {travelDays ? `${travelDays} dias` : "Selecionar"}
           </span>
         </button>
 
         {isCalendarOpen ? (
-          <div className={styles.datePickerPanel}>
-            <div className={styles.datePickerHeader}>
+          <div className={styles.panel} role="dialog" aria-label="Selecionar periodo">
+            <div className={styles.header}>
               <div>
-                <span className={styles.dateCardLabel}>Selecione o periodo</span>
-                <p className={styles.datePickerTitle}>Ida e volta</p>
+                <span className={fieldStyles.dateCardLabel}>Selecione o periodo</span>
+                <p className={styles.title}>Ida e volta</p>
               </div>
-              <span className={styles.dateDurationBadge}>
+              <span className={styles.durationBadge}>
                 {travelDays ? `${travelDays} dias de viagem` : "Sem datas"}
               </span>
             </div>
@@ -150,13 +149,13 @@ export function DateRangeField({
               }}
             />
 
-            <div className={styles.datePickerFooter}>
-              <span className={styles.fieldHint}>
+            <div className={styles.footer}>
+              <span className={fieldStyles.fieldHint}>
                 Escolha ida e volta no mesmo calendario.
               </span>
               <button
                 type="button"
-                className={styles.datePickerClose}
+                className={styles.closeButton}
                 onClick={() => setIsCalendarOpen(false)}
               >
                 Aplicar

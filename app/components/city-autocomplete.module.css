@@ -1,0 +1,38 @@
+.results {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--panelStrong);
+  box-shadow: var(--shadow);
+  z-index: 3;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.item {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+}
+
+.item:hover,
+.item[aria-selected="true"] {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.loading {
+  padding: 12px 14px;
+  color: var(--soft);
+  font-size: 0.82rem;
+}

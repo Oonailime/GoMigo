@@ -1,0 +1,21 @@
+.toggle {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.button {
+  border: 0;
+  background: transparent;
+  color: var(--soft);
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.buttonActive {
+  background: var(--panelStrong);
+  color: var(--text);
+}

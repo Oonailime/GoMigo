@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import styles from "../page.module.css";
+import { useEffect, useId, useState } from "react";
+import fieldStyles from "../page.module.css";
+import styles from "./city-autocomplete.module.css";
 
 type CityOption = {
   id: number;
@@ -27,6 +28,7 @@ export function CityAutocomplete({
   const [options, setOptions] = useState<CityOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFallback, setIsFallback] = useState(false);
+  const listboxId = useId();
   const normalizedValue = value.trim().toLowerCase();
 
   useEffect(() => {
@@ -34,6 +36,8 @@ export function CityAutocomplete({
 
     if (searchTerm.length < 2) {
       setOptions([]);
+      setIsFallback(false);
+      setIsLoading(false);
       return;
     }
 
@@ -49,6 +53,7 @@ export function CityAutocomplete({
 
         if (!response.ok) {
           setOptions([]);
+          setIsFallback(false);
           return;
         }
 
@@ -81,28 +86,37 @@ export function CityAutocomplete({
       ));
 
   return (
-    <label className={styles.fieldGroup}>
-      <span className={styles.fieldLabel}>{label}</span>
-      <div className={styles.inputShell}>
+    <label className={fieldStyles.fieldGroup}>
+      <span className={fieldStyles.fieldLabel}>{label}</span>
+      <div className={fieldStyles.inputShell}>
         <input
-          className={styles.textInput}
+          className={fieldStyles.textInput}
           type="text"
           value={value}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
           autoComplete="off"
+          role="combobox"
+          aria-expanded={shouldShowResults}
+          aria-controls={shouldShowResults ? listboxId : undefined}
+          aria-autocomplete="list"
         />
 
         {shouldShowResults ? (
-          <div className={styles.autocompleteResults} role="listbox">
+          <div className={styles.results} role="listbox" id={listboxId}>
             {isLoading ? (
-              <span className={styles.fieldHint}>Buscando cidades...</span>
+              <span className={styles.loading}>Buscando cidades...</span>
             ) : (
               options.map((option) => (
                 <button
                   key={option.id}
                   type="button"
-                  className={styles.autocompleteItem}
+                  className={styles.item}
+                  role="option"
+                  aria-selected={
+                    `${option.name} - ${option.stateCode}`.toLowerCase() ===
+                    normalizedValue
+                  }
                   onClick={() => onChange(`${option.name} - ${option.stateCode}`)}
                 >
                   {option.name} - {option.stateCode}
@@ -112,7 +126,7 @@ export function CityAutocomplete({
           </div>
         ) : null}
       </div>
-      <span className={styles.fieldHint}>
+      <span className={fieldStyles.fieldHint}>
         {isFallback
           ? "Mostrando sugestoes locais enquanto a base completa nao responde."
           : helperText}

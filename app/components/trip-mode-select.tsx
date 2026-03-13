@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import styles from "../page.module.css";
+import { useId, useMemo, useRef, useState } from "react";
+import fieldStyles from "../page.module.css";
+import styles from "./trip-mode-select.module.css";
+import { useDismissibleLayer } from "./use-dismissible-layer";
 
 type TripModeOption = {
   value: string;
@@ -21,45 +23,46 @@ export function TripModeSelect({
 }: TripModeSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const listboxId = useId();
 
   const selectedOption = useMemo(
     () => options.find((option) => option.value === value) ?? options[0],
     [options, value],
   );
 
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, []);
+  useDismissibleLayer({
+    isOpen,
+    containerRef,
+    onDismiss: () => setIsOpen(false),
+  });
 
   return (
-    <div className={styles.fieldGroup}>
-      <span className={styles.fieldLabel}>Modo da viagem</span>
-      <div className={styles.inputShell} ref={containerRef}>
+    <div className={fieldStyles.fieldGroup}>
+      <span className={fieldStyles.fieldLabel}>Modo da viagem</span>
+      <div className={fieldStyles.inputShell} ref={containerRef}>
         <button
           type="button"
-          className={styles.dropdownTrigger}
+          className={styles.trigger}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          aria-controls={isOpen ? listboxId : undefined}
           onClick={() => setIsOpen((currentValue) => !currentValue)}
         >
-          <span className={styles.dropdownValue}>{selectedOption.label}</span>
-          <span className={styles.dropdownChevron} aria-hidden="true">
+          <span className={styles.value}>{selectedOption.label}</span>
+          <span className={styles.chevron} aria-hidden="true">
             v
           </span>
         </button>
 
         {isOpen ? (
-          <div className={styles.autocompleteResults} role="listbox">
+          <div className={styles.results} role="listbox" id={listboxId}>
             {options.map((option) => (
               <button
                 key={option.value}
                 type="button"
-                className={styles.autocompleteItem}
+                className={styles.item}
+                role="option"
+                aria-selected={option.value === value}
                 onClick={() => {
                   onChange(option.value);
                   setIsOpen(false);
@@ -71,7 +74,7 @@ export function TripModeSelect({
           </div>
         ) : null}
       </div>
-      <span className={styles.fieldHint}>
+      <span className={fieldStyles.fieldHint}>
         Defina o tipo de experiencia que deseja montar.
       </span>
     </div>

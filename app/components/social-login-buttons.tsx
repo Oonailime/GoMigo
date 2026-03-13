@@ -1,11 +1,11 @@
-import styles from "../page.module.css";
+import styles from "./social-login-buttons.module.css";
 
 export function SocialLoginButtons() {
   return (
-    <div className={styles.socialActions} aria-label="Entrar com redes sociais">
-      <button type="button" className={styles.buttonSecondary} disabled>
+    <div className={styles.actions} aria-label="Entrar com redes sociais">
+      <button type="button" className={styles.button} disabled>
         <span
-          className={`${styles.socialIcon} ${styles.socialGoogle}`}
+          className={`${styles.icon} ${styles.google}`}
           aria-hidden="true"
         >
           G

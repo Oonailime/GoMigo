@@ -1,4 +1,4 @@
-import styles from "../page.module.css";
+import styles from "./theme-toggle.module.css";
 
 type ThemeMode = "dark" | "light";
 
@@ -12,11 +12,11 @@ export function ThemeToggle({
   onThemeChange,
 }: ThemeToggleProps) {
   return (
-    <div className={styles.themeToggle} aria-label="Selecionar tema">
+    <div className={styles.toggle} aria-label="Selecionar tema">
       <button
         type="button"
-        className={`${styles.themeToggleButton} ${
-          currentTheme === "light" ? styles.themeToggleButtonActive : ""
+        className={`${styles.button} ${
+          currentTheme === "light" ? styles.buttonActive : ""
         }`}
         onClick={() => onThemeChange("light")}
       >
@@ -24,8 +24,8 @@ export function ThemeToggle({
       </button>
       <button
         type="button"
-        className={`${styles.themeToggleButton} ${
-          currentTheme === "dark" ? styles.themeToggleButtonActive : ""
+        className={`${styles.button} ${
+          currentTheme === "dark" ? styles.buttonActive : ""
         }`}
         onClick={() => onThemeChange("dark")}
       >
