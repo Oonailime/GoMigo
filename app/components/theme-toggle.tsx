@@ -1,3 +1,5 @@
+"use client";
+
 import styles from "./theme-toggle.module.css";
 
 type ThemeMode = "dark" | "light";

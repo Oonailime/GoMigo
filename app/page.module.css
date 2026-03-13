@@ -25,7 +25,7 @@
     var(--bg);
 }
 
-.pageShell[data-theme="light"] {
+:root[data-theme="light"] .pageShell {
   --bg: #f4efe6;
   --panel: rgba(255, 250, 244, 0.95);
   --panelStrong: rgba(255, 255, 255, 0.99);
@@ -312,11 +312,11 @@
   transform: translateY(-1px);
 }
 
-.pageShell[data-theme="light"] .dateInput::-webkit-calendar-picker-indicator {
+:root[data-theme="light"] .pageShell .dateInput::-webkit-calendar-picker-indicator {
   filter: none;
 }
 
-.pageShell[data-theme="dark"] .dateInput::-webkit-calendar-picker-indicator {
+:root[data-theme="dark"] .pageShell .dateInput::-webkit-calendar-picker-indicator {
   filter: invert(0.9);
 }
 
