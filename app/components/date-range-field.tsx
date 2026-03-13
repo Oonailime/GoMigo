@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Chevron, DayPicker, type DateRange } from "react-day-picker";
+import { DayPicker, type DateRange } from "react-day-picker";
 import styles from "../page.module.css";
 
 type DateRangeFieldProps = {
@@ -100,12 +100,18 @@ export function DateRangeField({
               showOutsideDays
               className={styles.calendar}
               components={{
-                Chevron: ({ orientation, ...props }) => (
-                  <Chevron
-                    {...props}
-                    orientation={orientation}
+                Chevron: ({ orientation }) => (
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
                     className={styles.calendarChevron}
-                  />
+                  >
+                    {orientation === "left" ? (
+                      <path d="M14 6 8 12l6 6" />
+                    ) : (
+                      <path d="m10 6 6 6-6 6" />
+                    )}
+                  </svg>
                 ),
               }}
               classNames={{
