@@ -45,10 +45,6 @@ export function DateRangeField({
   const handleSelect = (range: DateRange | undefined) => {
     onStartDateChange(range?.from ? toDateInputValue(range.from) : "");
     onEndDateChange(range?.to ? toDateInputValue(range.to) : "");
-
-    if (range?.from && range?.to) {
-      setIsCalendarOpen(false);
-    }
   };
 
   return (
