@@ -104,6 +104,18 @@
   max-width: 640px;
 }
 
+.heroActions {
+  margin-top: 24px;
+  display: flex;
+}
+
+.heroActions .buttonPrimary {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .heroTitle,
 .panelTitle {
   margin: 0;
@@ -186,6 +198,12 @@
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 32px;
+}
+
+.panelActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .panelTitle {
@@ -646,6 +664,7 @@
   cursor: pointer;
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
   min-height: 56px;
+  text-decoration: none;
 }
 
 .buttonPrimary:hover,

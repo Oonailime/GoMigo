@@ -1,0 +1,54 @@
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status {
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+
+.userInfo {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.userName {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.userMeta {
+  color: var(--soft);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.button,
+.buttonSecondary {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.button {
+  background: var(--accent);
+  color: var(--buttonText);
+}
+
+.buttonSecondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.button:hover,
+.buttonSecondary:hover {
+  transform: translateY(-1px);
+}

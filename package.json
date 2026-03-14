@@ -1,23 +1,14 @@
 {
   "name": "gomigo",
-  "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "Frontend",
+    "Backend"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "next": "15.2.2",
-    "react": "19.0.0",
-    "react-day-picker": "^9.14.0",
-    "react-dom": "19.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "22.13.10",
-    "@types/react": "19.0.10",
-    "@types/react-dom": "19.0.4",
-    "typescript": "5.8.2"
+    "dev:frontend": "npm run dev --workspace Frontend",
+    "dev:backend": "npm run start:dev --workspace Backend",
+    "build:frontend": "npm run build --workspace Frontend",
+    "build:backend": "npm run build --workspace Backend"
   }
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import styles from "../page.module.css";
 import { TravelPlannerForm } from "./travel-planner-form";
 
@@ -20,6 +21,11 @@ export function TravelLandingPage() {
               caronas, mas ampliado para conectar pessoas, acomodacoes e
               experiencias turisticas com menos friccao.
             </p>
+            <div className={styles.heroActions}>
+              <Link href="/travel-package/new" className={styles.buttonPrimary}>
+                Oferecer uma viagem
+              </Link>
+            </div>
           </div>
 
           <div className={styles.heroInsights}>

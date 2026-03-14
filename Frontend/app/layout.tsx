@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { AppSessionProvider } from "./components/session-provider";
 
 const bodyFont = IBM_Plex_Sans({
   variable: "--font-body",
@@ -32,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" data-theme="dark">
       <body className={`${bodyFont.variable} ${displayFont.variable}`}>
-        {children}
+        <AppSessionProvider>{children}</AppSessionProvider>
       </body>
     </html>
   );

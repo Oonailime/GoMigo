@@ -1,0 +1,90 @@
+.form {
+  display: grid;
+  gap: 20px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.input,
+.textarea {
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(5, 15, 28, 0.6);
+  color: var(--text);
+  padding: 14px 16px;
+  outline: none;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+:root[data-theme="light"] .input,
+:root[data-theme="light"] .textarea {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: rgba(78, 199, 176, 0.5);
+  background: rgba(8, 20, 36, 0.9);
+  transform: translateY(-1px);
+}
+
+:root[data-theme="light"] .input:focus,
+:root[data-theme="light"] .textarea:focus {
+  background: #ffffff;
+}
+
+.textarea {
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.primaryButton,
+.secondaryButton {
+  border-radius: 16px;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.primaryButton {
+  background: var(--accent);
+  color: var(--buttonText);
+}
+
+.secondaryButton {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.primaryButton:hover,
+.secondaryButton:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -7,6 +7,7 @@ import { CityAutocomplete } from "./city-autocomplete";
 import { SocialLoginButtons } from "./social-login-buttons";
 import { ThemeToggle } from "./theme-toggle";
 import { TripModeSelect } from "./trip-mode-select";
+import { UserMenu } from "./user-menu";
 import dynamic from "next/dynamic";
 
 const DateRangeField = dynamic(
@@ -71,7 +72,10 @@ export function TravelPlannerForm() {
           <p className={styles.eyebrow}>Acesso rapido</p>
           <h2 className={styles.panelTitle}>Comece sua proxima viagem</h2>
         </div>
-        <ThemeToggle currentTheme={themeMode} onThemeChange={setThemeMode} />
+        <div className={styles.panelActions}>
+          <ThemeToggle currentTheme={themeMode} onThemeChange={setThemeMode} />
+          <UserMenu />
+        </div>
       </div>
 
       <form className={styles.travelForm} onSubmit={(event) => event.preventDefault()}>
@@ -116,7 +120,7 @@ export function TravelPlannerForm() {
           type="button"
           className={`${styles.buttonPrimary} ${styles.formFullWidth}`}
         >
-          Buscar opcoes em breve
+          Buscar opcoes
         </button>
 
         <div className={styles.formFullWidth}>
