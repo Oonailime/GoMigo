@@ -1,6 +1,10 @@
 {
   "name": "gomigo",
   "private": true,
+  "overrides": {
+    "ajv": "^8.18.0",
+    "file-type": "^21.3.2"
+  },
   "workspaces": [
     "Frontend",
     "Backend"

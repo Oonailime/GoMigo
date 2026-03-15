@@ -8,9 +8,494 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                       Int                          @id @default(autoincrement())
+  name                     String                       @db.VarChar(100)
+  cpf                      String                       @unique @db.VarChar(14)
+  phoneNumber              String                       @unique @map("phoneNumber") @db.VarChar(40)
+  email                    String                       @unique @db.VarChar(80)
+  status                   String                       @db.VarChar(30)
+  dataCriacao              DateTime                     @default(now()) @map("dataCriacao") @db.Timestamptz(6)
+  assinaturas              Assinatura[]
+  pacotesOrganizados       PacoteViagem[]               @relation("PacoteOrganizador")
+  solicitacoesParticipacao SolicitacaoParticipacao[]
+  viajanteEmPacotes        Viajante[]
+  veiculos                 Veiculo[]                    @relation("VeiculoProprietario")
+  caronasComoMotorista     Carona[]                     @relation("CaronaMotorista")
+  reservasHospedagem       ReservaHospedagem[]
+  itensChecklistResponsavel ItemChecklistPacote[]
+  anexos                   Anexo[]
+  historicosStatus         HistoricoStatusPacote[]      @relation("HistoricoStatusResponsavel")
+  convitesEnviados         Convite[]                    @relation("ConviteRemetente")
+  convitesRecebidos        Convite[]                    @relation("ConviteDestinatario")
+  pagamentos               Pagamento[]                  @relation("PagamentoPagador")
+  rateios                  Rateio[]
+  mensagensEnviadas        Mensagem[]                   @relation("MensagemRemetente")
+  avaliacoesAutor          Avaliacao[]                  @relation("AvaliacaoAutor")
+  avaliacoesRecebidas      Avaliacao[]                  @relation("AvaliacaoAvaliado")
+  cobrancasPlataforma      CobrancaPlataforma[]         @relation("CobrancaOrganizador")
+  anunciosPacote           AnuncioPacote[]              @relation("AnuncioOrganizador")
+  documentosVerificacao    DocumentoVerificacao[]
+  denunciasAutor           Denuncia[]                   @relation("DenunciaAutor")
+  denunciasRecebidas       Denuncia[]                   @relation("DenunciaUsuario")
+  bloqueiosSofridos        BloqueioUsuario[]            @relation("BloqueioUsuario")
+  bloqueiosAplicados       BloqueioUsuario[]            @relation("BloqueioResponsavel")
+
+  @@map("tbUser")
+}
+
+model Endereco {
+  id                    Int              @id @default(autoincrement())
+  rua                   String           @db.Text
+  cep                   String           @db.Text
+  numero                Int?
+  complemento           String?          @db.Text
+  estado                String           @db.Text
+  cidade                String           @db.Text
+  pacotesPartida        PacoteViagem[]   @relation("PacoteEnderecoPartida")
+  pacotesDestino        PacoteViagem[]   @relation("PacoteEnderecoDestino")
+  caronasPartida        Carona[]         @relation("CaronaEnderecoPartida")
+  caronasDestino        Carona[]         @relation("CaronaEnderecoDestino")
+  hospedagens           Hospedagem[]
+  atividades            Atividade[]
+
+  @@map("tbEndereco")
+}
+
+model Plano {
+  id                  Int          @id @default(autoincrement())
+  nome                String       @db.VarChar(80)
+  descricao           String?      @db.Text
+  valorMensal         Int          @map("valorMensal")
+  valorAnual          Int?         @map("valorAnual")
+  limitePacotesAtivos Int?         @map("limitePacotesAtivos")
+  permiteDestaque     Boolean      @default(false) @map("permiteDestaque")
+  status              String       @db.VarChar(30)
+  assinaturas         Assinatura[]
+
+  @@map("tbPlano")
+}
+
+model Assinatura {
+  id                  Int       @id @default(autoincrement())
+  idUser              Int       @map("idUser")
+  idPlano             Int       @map("idPlano")
+  status              String    @db.VarChar(30)
+  dataInicio          DateTime  @map("dataInicio") @db.Timestamptz(6)
+  dataFim             DateTime? @map("dataFim") @db.Timestamptz(6)
+  renovacaoAutomatica Boolean   @default(false) @map("renovacaoAutomatica")
+  user                User      @relation(fields: [idUser], references: [id])
+  plano               Plano     @relation(fields: [idPlano], references: [id])
+
+  @@map("tbAssinatura")
+}
+
+model PacoteViagem {
+  id                       Int                           @id @default(autoincrement())
+  idOrganizador            Int                           @map("idOrganizador")
+  idEnderecoPartida        Int                           @map("idEnderecoPartida")
+  idEnderecoDestino        Int                           @map("idEnderecoDestino")
+  titulo                   String                        @db.VarChar(120)
+  descricao                String?                       @db.Text
+  tipoPacoteViagem         String                        @map("tipoPacoteViagem") @db.VarChar(30)
+  status                   String                        @db.VarChar(30)
+  vagas                    Int
+  regrasViagem             String                        @map("regrasViagem") @db.Text
+  valorTotalPrevisto       Int?                          @map("valorTotalPrevisto")
+  valorPorPessoaPrevisto   Int?                          @map("valorPorPessoaPrevisto")
+  dataInicio               DateTime?                     @map("dataInicio") @db.Timestamptz(6)
+  dataFim                  DateTime?                     @map("dataFim") @db.Timestamptz(6)
+  privacidade              String                        @db.VarChar(30)
+  dataCriacao              DateTime                      @default(now()) @map("dataCriacao") @db.Timestamptz(6)
+  organizador              User                          @relation("PacoteOrganizador", fields: [idOrganizador], references: [id])
+  enderecoPartida          Endereco                      @relation("PacoteEnderecoPartida", fields: [idEnderecoPartida], references: [id])
+  enderecoDestino          Endereco                      @relation("PacoteEnderecoDestino", fields: [idEnderecoDestino], references: [id])
+  solicitacoesParticipacao SolicitacaoParticipacao[]
+  viajantes                Viajante[]
+  caronas                  Carona[]
+  hospedagens              Hospedagem[]
+  roteiros                 Roteiro[]
+  checklists               ChecklistPacote[]
+  anexos                   Anexo[]
+  historicoStatus          HistoricoStatusPacote[]
+  convites                 Convite[]
+  pagamentos               Pagamento[]
+  rateios                  Rateio[]
+  mensagens                Mensagem[]
+  avaliacoes               Avaliacao[]
+  cobrancasPlataforma      CobrancaPlataforma[]
+  anuncios                 AnuncioPacote[]
+  denuncias                Denuncia[]
+
+  @@map("tbPacoteViagem")
+}
+
+model SolicitacaoParticipacao {
+  id                 Int       @id @default(autoincrement())
+  idPacoteViagem     Int       @map("idPacoteViagem")
+  idUser             Int       @map("idUser")
+  statusSolicitacao  String    @map("statusSolicitacao") @db.VarChar(30)
+  mensagemSolicitacao String?  @map("mensagemSolicitacao") @db.Text
+  motivoRecusa       String?   @map("motivoRecusa") @db.Text
+  dataSolicitacao    DateTime  @default(now()) @map("dataSolicitacao") @db.Timestamptz(6)
+  dataResposta       DateTime? @map("dataResposta") @db.Timestamptz(6)
+  pacoteViagem       PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
+  user               User      @relation(fields: [idUser], references: [id])
+
+  @@map("tbSolicitacaoParticipacao")
+}
+
+model Viajante {
+  idPacoteViagem    Int       @map("idPacoteViagem")
+  idUser            Int       @map("idUser")
+  statusParticipacao String   @map("statusParticipacao") @db.VarChar(30)
+  permissao         String    @db.VarChar(30)
+  dataEntrada       DateTime  @default(now()) @map("dataEntrada") @db.Timestamptz(6)
+  pacoteViagem      PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
+  user              User      @relation(fields: [idUser], references: [id])
+
+  @@id([idPacoteViagem, idUser])
+  @@map("tbViajante")
+}
+
+model Veiculo {
+  id                    Int      @id @default(autoincrement())
+  idUserProprietario    Int      @map("idUserProprietario")
+  marca                 String   @db.VarChar(50)
+  modelo                String   @db.VarChar(50)
+  cor                   String?  @db.VarChar(30)
+  placa                 String   @unique @db.VarChar(10)
+  ano                   Int?
+  capacidadePassageiros Int      @map("capacidadePassageiros")
+  proprietario          User     @relation("VeiculoProprietario", fields: [idUserProprietario], references: [id])
+  caronas               Carona[]
+
+  @@map("tbVeiculo")
+}
+
+model Carona {
+  id                 Int          @id @default(autoincrement())
+  idPacoteViagem     Int          @map("idPacoteViagem")
+  idVeiculo          Int?         @map("idVeiculo")
+  idMotorista        Int          @map("idMotorista")
+  dataIda            DateTime?    @map("dataIda") @db.Timestamptz(6)
+  dataVolta          DateTime?    @map("dataVolta") @db.Timestamptz(6)
+  precoTotal         Int?         @map("precoTotal")
+  precoPorPessoa     Int?         @map("precoPorPessoa")
+  idEnderecoPartida  Int?         @map("idEnderecoPartida")
+  idEnderecoDestino  Int?         @map("idEnderecoDestino")
+  regrasCarona       String       @map("regrasCarona") @db.Text
+  vagasDisponiveis   Int?         @map("vagasDisponiveis")
+  status             String       @db.VarChar(30)
+  pacoteViagem       PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
+  veiculo            Veiculo?     @relation(fields: [idVeiculo], references: [id])
+  motorista          User         @relation("CaronaMotorista", fields: [idMotorista], references: [id])
+  enderecoPartida    Endereco?    @relation("CaronaEnderecoPartida", fields: [idEnderecoPartida], references: [id])
+  enderecoDestino    Endereco?    @relation("CaronaEnderecoDestino", fields: [idEnderecoDestino], references: [id])
+  avaliacoes         Avaliacao[]
+
+  @@map("tbCarona")
+}
+
+model Hospedagem {
+  id                Int                   @id @default(autoincrement())
+  idPacoteViagem    Int                   @map("idPacoteViagem")
+  idEndereco        Int?                  @map("idEndereco")
+  nomeLocal         String?               @map("nomeLocal") @db.VarChar(120)
+  dataCheckin       DateTime?             @map("dataCheckin") @db.Timestamptz(6)
+  dataCheckout      DateTime?             @map("dataCheckout") @db.Timestamptz(6)
+  precoTotal        Int?                  @map("precoTotal")
+  precoPorPessoa    Int?                  @map("precoPorPessoa")
+  regrasHospedagem  String                @map("regrasHospedagem") @db.Text
+  statusReserva     String                @map("statusReserva") @db.VarChar(30)
+  pacoteViagem      PacoteViagem          @relation(fields: [idPacoteViagem], references: [id])
+  endereco          Endereco?             @relation(fields: [idEndereco], references: [id])
+  quartos           Quarto[]
+  reservas          ReservaHospedagem[]
+  anexos            Anexo[]
+  avaliacoes        Avaliacao[]
+
+  @@map("tbHospedagem")
+}
+
+model Quarto {
+  id            Int                  @id @default(autoincrement())
+  idHospedagem  Int                  @map("idHospedagem")
+  nome          String               @db.VarChar(80)
+  capacidade    Int
+  tipoQuarto    String?              @map("tipoQuarto") @db.VarChar(30)
+  preco         Int?
+  descricao     String?              @db.Text
+  hospedagem    Hospedagem           @relation(fields: [idHospedagem], references: [id])
+  reservas      ReservaHospedagem[]
+
+  @@map("tbQuarto")
+}
+
+model ReservaHospedagem {
+  id               Int        @id @default(autoincrement())
+  idHospedagem     Int        @map("idHospedagem")
+  idQuarto         Int?       @map("idQuarto")
+  idUser           Int        @map("idUser")
+  statusReserva    String     @map("statusReserva") @db.VarChar(30)
+  valorIndividual  Int?       @map("valorIndividual")
+  dataReserva      DateTime   @default(now()) @map("dataReserva") @db.Timestamptz(6)
+  hospedagem       Hospedagem @relation(fields: [idHospedagem], references: [id])
+  quarto           Quarto?    @relation(fields: [idQuarto], references: [id])
+  user             User       @relation(fields: [idUser], references: [id])
+
+  @@map("tbReservaHospedagem")
+}
+
+model CategoriaAtividade {
+  id         Int         @id @default(autoincrement())
+  nome       String      @unique @db.VarChar(60)
+  descricao  String?     @db.Text
+  atividades Atividade[]
+
+  @@map("tbCategoriaAtividade")
+}
+
+model Roteiro {
+  id             Int         @id @default(autoincrement())
+  idPacoteViagem Int         @map("idPacoteViagem")
+  titulo         String      @db.VarChar(120)
+  descricao      String?     @db.Text
+  precoTotal     Int?        @map("precoTotal")
+  pacoteViagem   PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
+  atividades     Atividade[]
+
+  @@map("tbRoteiro")
+}
+
+model Atividade {
+  id                   Int                 @id @default(autoincrement())
+  idRoteiro            Int                 @map("idRoteiro")
+  idCategoriaAtividade Int?                @map("idCategoriaAtividade")
+  idEndereco           Int?                @map("idEndereco")
+  titulo               String              @db.VarChar(120)
+  descricao            String              @db.Text
+  dataHoraInicio       DateTime            @map("dataHoraInicio") @db.Timestamptz(6)
+  dataHoraFim          DateTime            @map("dataHoraFim") @db.Timestamptz(6)
+  ordem                Int?
+  preco                Int?
+  roteiro              Roteiro             @relation(fields: [idRoteiro], references: [id])
+  categoriaAtividade   CategoriaAtividade? @relation(fields: [idCategoriaAtividade], references: [id])
+  endereco             Endereco?           @relation(fields: [idEndereco], references: [id])
+  anexos               Anexo[]
+
+  @@map("tbAtividade")
+}
+
+model ChecklistPacote {
+  id             Int                  @id @default(autoincrement())
+  idPacoteViagem Int                  @map("idPacoteViagem")
+  titulo         String               @db.VarChar(120)
+  descricao      String?              @db.Text
+  pacoteViagem   PacoteViagem         @relation(fields: [idPacoteViagem], references: [id])
+  itens          ItemChecklistPacote[]
+
+  @@map("tbChecklistPacote")
+}
+
+model ItemChecklistPacote {
+  id                  Int              @id @default(autoincrement())
+  idChecklistPacote   Int              @map("idChecklistPacote")
+  descricao           String           @db.Text
+  statusItem          String           @map("statusItem") @db.VarChar(30)
+  idResponsavel       Int?             @map("idResponsavel")
+  prazo               DateTime?        @db.Timestamptz(6)
+  checklistPacote     ChecklistPacote  @relation(fields: [idChecklistPacote], references: [id])
+  responsavel         User?            @relation(fields: [idResponsavel], references: [id])
+
+  @@map("tbItemChecklistPacote")
+}
+
+model Anexo {
+  id             Int          @id @default(autoincrement())
+  idPacoteViagem Int?         @map("idPacoteViagem")
+  idAtividade    Int?         @map("idAtividade")
+  idHospedagem   Int?         @map("idHospedagem")
+  idUser         Int          @map("idUser")
+  nomeArquivo    String       @map("nomeArquivo") @db.VarChar(255)
+  urlArquivo     String       @map("urlArquivo") @db.Text
+  tipoArquivo    String       @map("tipoArquivo") @db.VarChar(50)
+  dataUpload     DateTime     @default(now()) @map("dataUpload") @db.Timestamptz(6)
+  pacoteViagem   PacoteViagem? @relation(fields: [idPacoteViagem], references: [id])
+  atividade      Atividade?   @relation(fields: [idAtividade], references: [id])
+  hospedagem     Hospedagem?  @relation(fields: [idHospedagem], references: [id])
+  user           User         @relation(fields: [idUser], references: [id])
+
+  @@map("tbAnexo")
+}
+
+model HistoricoStatusPacote {
+  id                Int          @id @default(autoincrement())
+  idPacoteViagem    Int          @map("idPacoteViagem")
+  statusAnterior    String?      @map("statusAnterior") @db.VarChar(30)
+  statusNovo        String       @map("statusNovo") @db.VarChar(30)
+  motivo            String?      @db.Text
+  idUserResponsavel Int          @map("idUserResponsavel")
+  dataAlteracao     DateTime     @default(now()) @map("dataAlteracao") @db.Timestamptz(6)
+  pacoteViagem      PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
+  userResponsavel   User         @relation("HistoricoStatusResponsavel", fields: [idUserResponsavel], references: [id])
+
+  @@map("tbHistoricoStatusPacote")
+}
+
+model Convite {
+  id                Int          @id @default(autoincrement())
+  idPacoteViagem    Int          @map("idPacoteViagem")
+  idUserRemetente   Int          @map("idUserRemetente")
+  idUserDestinatario Int?        @map("idUserDestinatario")
+  emailDestinatario String?      @map("emailDestinatario") @db.VarChar(80)
+  telefoneDestinatario String?   @map("telefoneDestinatario") @db.VarChar(40)
+  statusConvite     String       @map("statusConvite") @db.VarChar(30)
+  tokenConvite      String       @unique @map("tokenConvite") @db.VarChar(120)
+  dataEnvio         DateTime     @default(now()) @map("dataEnvio") @db.Timestamptz(6)
+  dataResposta      DateTime?    @map("dataResposta") @db.Timestamptz(6)
+  pacoteViagem      PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
+  remetente         User         @relation("ConviteRemetente", fields: [idUserRemetente], references: [id])
+  destinatario      User?        @relation("ConviteDestinatario", fields: [idUserDestinatario], references: [id])
+
+  @@map("tbConvite")
+}
+
+model Pagamento {
+  id                Int          @id @default(autoincrement())
+  idPacoteViagem    Int          @map("idPacoteViagem")
+  idUserPagador     Int          @map("idUserPagador")
+  tipoPagamento     String       @map("tipoPagamento") @db.VarChar(30)
+  statusPagamento   String       @map("statusPagamento") @db.VarChar(30)
+  valor             Int
+  metodoPagamento   String       @map("metodoPagamento") @db.VarChar(30)
+  referenciaExterna String?      @map("referenciaExterna") @db.VarChar(120)
+  dataCriacao       DateTime     @default(now()) @map("dataCriacao") @db.Timestamptz(6)
+  dataPagamento     DateTime?    @map("dataPagamento") @db.Timestamptz(6)
+  pacoteViagem      PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
+  pagador           User         @relation("PagamentoPagador", fields: [idUserPagador], references: [id])
+
+  @@map("tbPagamento")
+}
+
+model Rateio {
+  id             Int          @id @default(autoincrement())
+  idPacoteViagem Int          @map("idPacoteViagem")
+  idUser         Int          @map("idUser")
+  descricao      String       @db.VarChar(120)
+  valorPrevisto  Int          @map("valorPrevisto")
+  valorPago      Int?         @map("valorPago")
+  statusRateio   String       @map("statusRateio") @db.VarChar(30)
+  pacoteViagem   PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
+  user           User         @relation(fields: [idUser], references: [id])
+
+  @@map("tbRateio")
+}
+
+model Mensagem {
+  id              Int          @id @default(autoincrement())
+  idPacoteViagem  Int          @map("idPacoteViagem")
+  idUserRemetente Int          @map("idUserRemetente")
+  mensagem        String       @db.Text
+  dataEnvio       DateTime     @default(now()) @map("dataEnvio") @db.Timestamptz(6)
+  pacoteViagem    PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
+  remetente       User         @relation("MensagemRemetente", fields: [idUserRemetente], references: [id])
+  denuncias       Denuncia[]
+
+  @@map("tbMensagem")
+}
+
+model Avaliacao {
+  id             Int          @id @default(autoincrement())
+  idPacoteViagem Int?         @map("idPacoteViagem")
+  idUserAutor    Int          @map("idUserAutor")
+  idUserAvaliado Int?         @map("idUserAvaliado")
+  idCarona       Int?         @map("idCarona")
+  idHospedagem   Int?         @map("idHospedagem")
+  nota           Int
+  comentario     String?      @db.Text
+  dataAvaliacao  DateTime     @default(now()) @map("dataAvaliacao") @db.Timestamptz(6)
+  pacoteViagem   PacoteViagem? @relation(fields: [idPacoteViagem], references: [id])
+  autor          User         @relation("AvaliacaoAutor", fields: [idUserAutor], references: [id])
+  avaliado       User?        @relation("AvaliacaoAvaliado", fields: [idUserAvaliado], references: [id])
+  carona         Carona?      @relation(fields: [idCarona], references: [id])
+  hospedagem     Hospedagem?  @relation(fields: [idHospedagem], references: [id])
+
+  @@map("tbAvaliacao")
+}
+
+model CobrancaPlataforma {
+  id             Int          @id @default(autoincrement())
+  idPacoteViagem Int          @map("idPacoteViagem")
+  idOrganizador  Int          @map("idOrganizador")
+  tipoCobranca   String       @map("tipoCobranca") @db.VarChar(30)
+  statusCobranca String       @map("statusCobranca") @db.VarChar(30)
+  valor          Int
+  dataCriacao    DateTime     @default(now()) @map("dataCriacao") @db.Timestamptz(6)
+  dataPagamento  DateTime?    @map("dataPagamento") @db.Timestamptz(6)
+  pacoteViagem   PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
+  organizador    User         @relation("CobrancaOrganizador", fields: [idOrganizador], references: [id])
+
+  @@map("tbCobrancaPlataforma")
+}
+
+model AnuncioPacote {
+  id               Int          @id @default(autoincrement())
+  idPacoteViagem   Int          @map("idPacoteViagem")
+  idOrganizador    Int          @map("idOrganizador")
+  tituloAnuncio    String       @map("tituloAnuncio") @db.VarChar(120)
+  descricaoAnuncio String?      @map("descricaoAnuncio") @db.Text
+  statusAnuncio    String       @map("statusAnuncio") @db.VarChar(30)
+  orcamento        Int?
+  dataInicio       DateTime?    @map("dataInicio") @db.Timestamptz(6)
+  dataFim          DateTime?    @map("dataFim") @db.Timestamptz(6)
+  pacoteViagem     PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
+  organizador      User         @relation("AnuncioOrganizador", fields: [idOrganizador], references: [id])
+
+  @@map("tbAnuncioPacote")
+}
+
+model DocumentoVerificacao {
+  id                Int       @id @default(autoincrement())
+  idUser            Int       @map("idUser")
+  tipoDocumento     String    @map("tipoDocumento") @db.VarChar(30)
+  numeroDocumento   String?   @map("numeroDocumento") @db.VarChar(80)
+  urlArquivo        String?   @map("urlArquivo") @db.Text
+  statusVerificacao String    @map("statusVerificacao") @db.VarChar(30)
+  dataEnvio         DateTime  @default(now()) @map("dataEnvio") @db.Timestamptz(6)
+  dataAnalise       DateTime? @map("dataAnalise") @db.Timestamptz(6)
+  user              User      @relation(fields: [idUser], references: [id])
+
+  @@map("tbDocumentoVerificacao")
+}
+
+model Denuncia {
+  id               Int          @id @default(autoincrement())
+  idUserAutor      Int          @map("idUserAutor")
+  idUserDenunciado Int?         @map("idUserDenunciado")
+  idPacoteViagem   Int?         @map("idPacoteViagem")
+  idMensagem       Int?         @map("idMensagem")
+  motivo           String       @db.VarChar(120)
+  descricao        String?      @db.Text
+  statusDenuncia   String       @map("statusDenuncia") @db.VarChar(30)
+  dataCriacao      DateTime     @default(now()) @map("dataCriacao") @db.Timestamptz(6)
+  autor            User         @relation("DenunciaAutor", fields: [idUserAutor], references: [id])
+  usuarioDenunciado User?       @relation("DenunciaUsuario", fields: [idUserDenunciado], references: [id])
+  pacoteViagem     PacoteViagem? @relation(fields: [idPacoteViagem], references: [id])
+  mensagem         Mensagem?    @relation(fields: [idMensagem], references: [id])
+
+  @@map("tbDenuncia")
+}
+
+model BloqueioUsuario {
+  id                Int       @id @default(autoincrement())
+  idUser            Int       @map("idUser")
+  motivo            String    @db.Text
+  statusBloqueio    String    @map("statusBloqueio") @db.VarChar(30)
+  dataInicio        DateTime  @default(now()) @map("dataInicio") @db.Timestamptz(6)
+  dataFim           DateTime? @map("dataFim") @db.Timestamptz(6)
+  idUserResponsavel Int       @map("idUserResponsavel")
+  user              User      @relation("BloqueioUsuario", fields: [idUser], references: [id])
+  responsavel       User      @relation("BloqueioResponsavel", fields: [idUserResponsavel], references: [id])
+
+  @@map("tbBloqueioUsuario")
 }

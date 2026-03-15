@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "15.2.2",
+    "next": "^15.5.12",
     "next-auth": "beta",
     "react": "19.0.0",
     "react-day-picker": "^9.14.0",
