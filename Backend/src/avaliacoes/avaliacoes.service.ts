@@ -108,6 +108,10 @@ export class AvaliacoesService {
     }
 
     if (data.tipo === 'VIAJANTE') {
+      if (data.idUserAvaliado === pacote.idOrganizador) {
+        throw new ForbiddenException('organizador so pode ser avaliado como organizador');
+      }
+
       const alvoViajante = await this.prisma.viajante.findUnique({
         where: {
           idPacoteViagem_idUser: {
@@ -211,7 +215,6 @@ export class AvaliacoesService {
         }
       }
     } else {
-      // Autor eh viajante: pode avaliar organizador (tipo ORGANIZADOR) e outros viajantes (tipo VIAJANTE)
       const organizadorKey = `ORGANIZADOR:${pacote.idOrganizador}`;
       if (!jaAvaliouSet.has(organizadorKey)) {
         pendentes.push({ tipo: 'ORGANIZADOR', idUserAvaliado: pacote.idOrganizador });
@@ -222,7 +225,7 @@ export class AvaliacoesService {
           continue;
         }
         const key = `VIAJANTE:${v.idUser}`;
-        if (!jaAvaliouSet.has(key)) {
+        if (!jaAvaliouSet.has(key) && v.idUser !== pacote.idOrganizador) {
           pendentes.push({ tipo: 'VIAJANTE', idUserAvaliado: v.idUser });
         }
       }

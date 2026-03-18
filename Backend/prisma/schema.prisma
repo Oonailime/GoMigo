@@ -428,7 +428,7 @@ model Avaliacao {
   carona         Carona?      @relation(fields: [idCarona], references: [id])
   hospedagem     Hospedagem?  @relation(fields: [idHospedagem], references: [id])
 
-  @@unique([idPacoteViagem, idUserAutor, idUserAvaliado, tipo])
+  @@unique([idPacoteViagem, idUserAutor, tipo])
   @@map("tbAvaliacao")
 }
 
@@ -508,4 +508,5 @@ model BloqueioUsuario {
 
   @@map("tbBloqueioUsuario")
 }
+
 
