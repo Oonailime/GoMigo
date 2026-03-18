@@ -10,13 +10,17 @@ export default async function TravelPackageNewPage() {
     redirect("/login");
   }
 
+  if (session.backendUserStatus === "INCOMPLETE") {
+    redirect("/complete-profile");
+  }
+
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
         <div>
           <h1 className={styles.title}>Criar pacote de viagem</h1>
           <p className={styles.subtitle}>
-            Preencha os detalhes do pacote para começar a organizar sua viagem.
+            Preencha os detalhes do pacote para comecar a organizar sua viagem.
           </p>
         </div>
 

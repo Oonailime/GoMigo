@@ -22,3 +22,5 @@ Backend/.env
 .vscode/
 *.log
 *.tsbuildinfo
+Backend/.env.example
+Frontend/.env.example

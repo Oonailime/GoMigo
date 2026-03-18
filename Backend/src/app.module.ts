@@ -11,6 +11,7 @@ import { HospedagensModule } from './hospedagens/hospedagens.module';
 import { CaronasModule } from './caronas/caronas.module';
 import { AvaliacoesModule } from './avaliacoes/avaliacoes.module';
 import { AnunciosModule } from './anuncios/anuncios.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AnunciosModule } from './anuncios/anuncios.module';
     CaronasModule,
     AvaliacoesModule,
     AnunciosModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

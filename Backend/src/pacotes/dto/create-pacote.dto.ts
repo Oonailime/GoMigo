@@ -11,6 +11,7 @@ const tiposPacote = [
 ] as const;
 
 export class CreatePacoteDto {
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   idOrganizador: number;

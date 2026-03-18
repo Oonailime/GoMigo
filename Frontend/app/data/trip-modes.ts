@@ -1,8 +1,8 @@
 export const BRAZILIAN_TRIP_MODES = [
-  { value: "roteiro-completo", label: "Roteiro completo" },
-  { value: "compartilhada", label: "Compartilhada" },
-  { value: "bate-volta", label: "Bate-volta" },
-  { value: "apenas-carona", label: "Apenas carona" },
-  { value: "apenas-hospedagem", label: "Apenas hospedagem" },
-  
+  { value: "ROTEIRO_COMPLETO", label: "Roteiro completo" },
+  { value: "COMPARTILHADO", label: "Compartilhado" },
+  { value: "BATE_VOLTA", label: "Bate-volta" },
+  { value: "APENAS_CARONA", label: "Apenas carona" },
+  { value: "APENAS_HOSPEDAGEM", label: "Apenas hospedagem" },
+  { value: "APENAS_GUIA_TURISTICO", label: "Apenas guia turistico" }
 ];

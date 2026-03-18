@@ -7,7 +7,11 @@ export default async function LoginPage() {
   const session = await auth();
 
   if (session) {
-    redirect("/travel-package/new");
+    redirect(
+      session.backendUserStatus === "INCOMPLETE"
+        ? "/complete-profile"
+        : "/travel-package/new",
+    );
   }
 
   return (

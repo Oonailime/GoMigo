@@ -1,0 +1,342 @@
+.pageShell {
+  --bg: #07111f;
+  --panel: rgba(12, 24, 40, 0.92);
+  --panelStrong: rgba(18, 34, 55, 0.985);
+  --line: rgba(154, 181, 214, 0.18);
+  --text: #f4f7fb;
+  --muted: rgba(228, 236, 248, 0.76);
+  --soft: rgba(228, 236, 248, 0.52);
+  --accent: #4ec7b0;
+  --accentStrong: #8ae0cf;
+  --buttonText: #04131b;
+  --fieldBg: rgba(5, 15, 28, 0.9);
+  --fieldBgFocus: rgba(8, 20, 36, 0.97);
+  --shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+  min-height: 100vh;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(78, 199, 176, 0.18), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(67, 116, 255, 0.18), transparent 26%),
+    linear-gradient(140deg, rgba(255, 184, 76, 0.08), transparent 40%),
+    var(--bg);
+}
+
+:root[data-theme="light"] .pageShell {
+  --bg: #f4efe6;
+  --panel: rgba(255, 250, 244, 0.95);
+  --panelStrong: rgba(255, 255, 255, 0.99);
+  --line: rgba(77, 61, 38, 0.14);
+  --text: #2b2218;
+  --muted: rgba(43, 34, 24, 0.72);
+  --soft: rgba(43, 34, 24, 0.48);
+  --accent: #146b63;
+  --accentStrong: #0d4d47;
+  --buttonText: #f7fbfa;
+  --fieldBg: rgba(255, 255, 255, 0.93);
+  --fieldBgFocus: rgba(255, 255, 255, 1);
+  --shadow: 0 24px 60px rgba(80, 58, 29, 0.16);
+}
+
+.surface {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.filterSurface {
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+}
+
+.resultsSurface {
+  position: relative;
+  z-index: 1;
+}
+
+.appBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 24px;
+  border-radius: 26px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.brandArea {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brandBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.06);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.brandSubtitle {
+  color: var(--soft);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.appActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.primaryButton,
+.secondaryButton {
+  border-radius: 999px;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.primaryButton {
+  background: var(--accent);
+  color: var(--buttonText);
+}
+
+.secondaryButton {
+  background: var(--panelStrong);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.primaryButton:hover,
+.secondaryButton:hover {
+  transform: translateY(-1px);
+}
+
+.filterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--soft);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2rem, 3vw, 3rem);
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.filterActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.helperError {
+  margin: 18px 0 0;
+  color: #f4b3b3;
+  font-size: 0.95rem;
+}
+
+.tabRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.tabButton {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--soft);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.tabButtonActive {
+  background: var(--panelStrong);
+  color: var(--text);
+  border-color: rgba(78, 199, 176, 0.6);
+}
+
+.resultsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.6rem;
+}
+
+.sectionSubtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.infoBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.resultsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  display: grid;
+  gap: 12px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardTitle {
+  margin: 0 0 6px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.2rem;
+}
+
+.cardMeta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.statusBadge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(78, 199, 176, 0.16);
+  color: var(--accentStrong);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cardRoute {
+  margin: 0;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.cardDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.cardDescription {
+  margin: 0;
+  color: var(--soft);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.emptyState {
+  border: 1px dashed var(--line);
+  border-radius: 20px;
+  padding: 32px;
+  text-align: center;
+  color: var(--soft);
+  display: grid;
+  gap: 6px;
+}
+
+@media (max-width: 1200px) {
+  .filterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .appBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .resultsHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .pageShell {
+    padding: 18px;
+  }
+
+  .appActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .filterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .filterActions {
+    justify-content: flex-start;
+  }
+}

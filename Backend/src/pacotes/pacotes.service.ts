@@ -78,6 +78,9 @@ export class PacotesService {
       throw new BadRequestException('dataInicio nao pode ser maior que dataFim');
     }
 
+    const cidadePartida = dto.cidadePartida.split(' - ')[0]?.trim() ?? dto.cidadePartida;
+    const cidadeDestino = dto.cidadeDestino.split(' - ')[0]?.trim() ?? dto.cidadeDestino;
+
     const baseWhere = {
       tipoPacoteViagem: dto.tipo as TipoPacoteViagem,
       privacidade: { not: 'PRIVADO' },
@@ -85,10 +88,10 @@ export class PacotesService {
         some: { statusAnuncio: 'ATIVO' },
       },
       enderecoPartida: {
-        cidade: { contains: dto.cidadePartida, mode: 'insensitive' as const },
+        cidade: { contains: cidadePartida, mode: 'insensitive' as const },
       },
       enderecoDestino: {
-        cidade: { contains: dto.cidadeDestino, mode: 'insensitive' as const },
+        cidade: { contains: cidadeDestino, mode: 'insensitive' as const },
       },
       dataInicio: { not: null },
       dataFim: { not: null },

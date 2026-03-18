@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "../page.module.css";
 import { BRAZILIAN_TRIP_MODES } from "../data/trip-modes";
 import { CityAutocomplete } from "./city-autocomplete";
@@ -45,7 +46,13 @@ const DateRangeField = dynamic(
 
 type ThemeMode = "dark" | "light";
 
+const normalizeCity = (value: string) => {
+  const raw = value.split(" - ")[0]?.trim() ?? "";
+  return raw.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+};
+
 export function TravelPlannerForm() {
+  const router = useRouter();
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
   const [originCity, setOriginCity] = useState("");
   const [destinationCity, setDestinationCity] = useState("");
@@ -63,6 +70,18 @@ export function TravelPlannerForm() {
     if (travelEndDate && value && travelEndDate < value) {
       setTravelEndDate("");
     }
+  };
+
+  const handleSearch = () => {
+    const params = new URLSearchParams({
+      cidadePartida: normalizeCity(originCity),
+      cidadeDestino: normalizeCity(destinationCity),
+      tipo: tripMode,
+      dataInicio: travelStartDate,
+      dataFim: travelEndDate,
+    });
+
+    router.push(`/search?${params.toString()}`);
   };
 
   return (
@@ -119,6 +138,7 @@ export function TravelPlannerForm() {
         <button
           type="button"
           className={`${styles.buttonPrimary} ${styles.formFullWidth}`}
+          onClick={handleSearch}
         >
           Buscar opcoes
         </button>
