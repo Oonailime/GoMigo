@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -22,28 +23,47 @@ export class CaronasService {
     return this.prisma.carona.create({ data });
   }
 
-  async update(id: number, data: Partial<{
-    idVeiculo?: number;
-    dataIda?: Date;
-    dataVolta?: Date;
-    precoTotal?: number;
-    precoPorPessoa?: number;
-    idEnderecoPartida?: number;
-    idEnderecoDestino?: number;
-    regrasCarona: string;
-    vagasDisponiveis?: number;
-    status: string;
-  }>) {
+  async update(
+    id: number,
+    data: Partial<{
+      idVeiculo?: number;
+      dataIda?: Date;
+      dataVolta?: Date;
+      precoTotal?: number;
+      precoPorPessoa?: number;
+      idEnderecoPartida?: number;
+      idEnderecoDestino?: number;
+      regrasCarona: string;
+      vagasDisponiveis?: number;
+      status: string;
+    }>,
+  ) {
     if (!id || Number.isNaN(id)) {
       throw new BadRequestException('id invalido');
     }
-    return this.prisma.carona.update({ where: { id }, data });
+
+    try {
+      return await this.prisma.carona.update({ where: { id }, data });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('carona nao encontrada');
+      }
+      throw error;
+    }
   }
 
   async delete(id: number) {
     if (!id || Number.isNaN(id)) {
       throw new BadRequestException('id invalido');
     }
-    return this.prisma.carona.delete({ where: { id } });
+
+    try {
+      return await this.prisma.carona.delete({ where: { id } });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('carona nao encontrada');
+      }
+      throw error;
+    }
   }
 }

@@ -1,4 +1,6 @@
-import { BadRequestException, Body, Controller, Delete, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Param, Patch, Post } from '@nestjs/common';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -6,27 +8,12 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  create(@Body() body: {
-    name: string;
-    cpf: string;
-    phoneNumber: string;
-    email: string;
-    status: string;
-  }) {
-    if (!body || !body.name || !body.cpf || !body.phoneNumber || !body.email || !body.status) {
-      throw new BadRequestException('body invalido');
-    }
+  create(@Body() body: CreateUserDto) {
     return this.usersService.create(body);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: {
-    name?: string;
-    cpf?: string;
-    phoneNumber?: string;
-    email?: string;
-    status?: string;
-  }) {
+  update(@Param('id') id: string, @Body() body: UpdateUserDto) {
     return this.usersService.update(Number(id), body);
   }
 

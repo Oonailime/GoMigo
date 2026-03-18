@@ -1,4 +1,6 @@
 import { Body, Controller, Delete, Param, Patch, Post } from '@nestjs/common';
+import { CreateEnderecoDto } from './dto/create-endereco.dto';
+import { UpdateEnderecoDto } from './dto/update-endereco.dto';
 import { EnderecosService } from './enderecos.service';
 
 @Controller('enderecos')
@@ -6,26 +8,12 @@ export class EnderecosController {
   constructor(private readonly enderecosService: EnderecosService) {}
 
   @Post()
-  create(@Body() body: {
-    rua: string;
-    cep: string;
-    numero?: number;
-    complemento?: string;
-    estado: string;
-    cidade: string;
-  }) {
+  create(@Body() body: CreateEnderecoDto) {
     return this.enderecosService.create(body);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: {
-    rua?: string;
-    cep?: string;
-    numero?: number;
-    complemento?: string;
-    estado?: string;
-    cidade?: string;
-  }) {
+  update(@Param('id') id: string, @Body() body: UpdateEnderecoDto) {
     return this.enderecosService.update(Number(id), body);
   }
 
