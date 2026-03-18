@@ -1,0 +1,430 @@
+{
+  "info": {
+    "name": "GoMigo Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "POST /users",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Joao\",\n  \"cpf\": \"123.456.789-00\",\n  \"phoneNumber\": \"11999999999\",\n  \"email\": \"joao@email.com\",\n  \"status\": \"ATIVO\"\n}"
+            },
+            "url": "{{baseUrl}}/users"
+          }
+        },
+        {
+          "name": "GET /users",
+          "request": { "method": "GET", "url": "{{baseUrl}}/users" }
+        },
+        {
+          "name": "GET /users/:id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/users/1" }
+        },
+        {
+          "name": "PATCH /users/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Joao Silva\",\n  \"status\": \"INATIVO\"\n}"
+            },
+            "url": "{{baseUrl}}/users/1"
+          }
+        },
+        {
+          "name": "DELETE /users/:id",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/users/1" }
+        }
+      ]
+    },
+    {
+      "name": "Enderecos",
+      "item": [
+        {
+          "name": "POST /enderecos",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rua\": \"Rua A\",\n  \"cep\": \"01000-000\",\n  \"numero\": 10,\n  \"complemento\": \"Apto 1\",\n  \"estado\": \"SP\",\n  \"cidade\": \"Sao Paulo\"\n}"
+            },
+            "url": "{{baseUrl}}/enderecos"
+          }
+        },
+        {
+          "name": "GET /enderecos",
+          "request": { "method": "GET", "url": "{{baseUrl}}/enderecos" }
+        },
+        {
+          "name": "GET /enderecos/:id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/enderecos/1" }
+        },
+        {
+          "name": "PATCH /enderecos/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rua\": \"Rua B\",\n  \"numero\": 20\n}"
+            },
+            "url": "{{baseUrl}}/enderecos/1"
+          }
+        },
+        {
+          "name": "DELETE /enderecos/:id",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/enderecos/1" }
+        }
+      ]
+    },
+    {
+      "name": "Veiculos",
+      "item": [
+        {
+          "name": "POST /veiculos",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idUserProprietario\": 1,\n  \"marca\": \"Fiat\",\n  \"modelo\": \"Uno\",\n  \"cor\": \"Preto\",\n  \"placa\": \"ABC1D23\",\n  \"ano\": 2015,\n  \"capacidadePassageiros\": 4\n}"
+            },
+            "url": "{{baseUrl}}/veiculos"
+          }
+        },
+        {
+          "name": "GET /veiculos",
+          "request": { "method": "GET", "url": "{{baseUrl}}/veiculos" }
+        },
+        {
+          "name": "GET /veiculos/:id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/veiculos/1" }
+        },
+        {
+          "name": "PATCH /veiculos/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cor\": \"Branco\",\n  \"ano\": 2018\n}"
+            },
+            "url": "{{baseUrl}}/veiculos/1"
+          }
+        },
+        {
+          "name": "DELETE /veiculos/:id",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/veiculos/1" }
+        }
+      ]
+    },
+    {
+      "name": "Pacotes",
+      "item": [
+        {
+          "name": "POST /pacotes",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idOrganizador\": 1,\n  \"idEnderecoPartida\": 1,\n  \"idEnderecoDestino\": 2,\n  \"titulo\": \"Viagem teste\",\n  \"descricao\": \"Descricao opcional\",\n  \"tipoPacoteViagem\": \"ROTEIRO_COMPLETO\",\n  \"status\": \"FINALIZADO\",\n  \"vagas\": 5,\n  \"regrasViagem\": \"Regras da viagem\",\n  \"valorTotalPrevisto\": 1000,\n  \"valorPorPessoaPrevisto\": 250,\n  \"dataInicio\": \"2026-03-01\",\n  \"dataFim\": \"2026-03-05\",\n  \"privacidade\": \"PUBLICO\"\n}"
+            },
+            "url": "{{baseUrl}}/pacotes"
+          }
+        },
+        {
+          "name": "GET /pacotes",
+          "request": { "method": "GET", "url": "{{baseUrl}}/pacotes" }
+        },
+        {
+          "name": "GET /pacotes/search",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/pacotes/search?cidadePartida=Sao%20Paulo&cidadeDestino=Rio%20de%20Janeiro&tipo=ROTEIRO_COMPLETO&dataInicio=2026-03-01&dataFim=2026-03-10"
+          }
+        },
+        {
+          "name": "GET /pacotes/anunciados",
+          "request": { "method": "GET", "url": "{{baseUrl}}/pacotes/anunciados" }
+        },
+        {
+          "name": "GET /pacotes/:id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/pacotes/1" }
+        },
+        {
+          "name": "PATCH /pacotes/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Novo titulo\",\n  \"status\": \"FINALIZADO\"\n}"
+            },
+            "url": "{{baseUrl}}/pacotes/1"
+          }
+        },
+        {
+          "name": "DELETE /pacotes/:id",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/pacotes/1" }
+        }
+      ]
+    },
+    {
+      "name": "Caronas",
+      "item": [
+        {
+          "name": "POST /caronas",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPacoteViagem\": 1,\n  \"idVeiculo\": 1,\n  \"idMotorista\": 1,\n  \"dataIda\": \"2026-03-01\",\n  \"dataVolta\": \"2026-03-05\",\n  \"precoTotal\": 200,\n  \"precoPorPessoa\": 50,\n  \"idEnderecoPartida\": 1,\n  \"idEnderecoDestino\": 2,\n  \"regrasCarona\": \"Regras da carona\",\n  \"vagasDisponiveis\": 3,\n  \"status\": \"ATIVA\"\n}"
+            },
+            "url": "{{baseUrl}}/caronas"
+          }
+        },
+        {
+          "name": "GET /caronas",
+          "request": { "method": "GET", "url": "{{baseUrl}}/caronas" }
+        },
+        {
+          "name": "GET /caronas/:id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/caronas/1" }
+        },
+        {
+          "name": "PATCH /caronas/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELADA\"\n}"
+            },
+            "url": "{{baseUrl}}/caronas/1"
+          }
+        },
+        {
+          "name": "DELETE /caronas/:id",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/caronas/1" }
+        }
+      ]
+    },
+    {
+      "name": "Hospedagens",
+      "item": [
+        {
+          "name": "POST /hospedagens",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPacoteViagem\": 1,\n  \"idEndereco\": 2,\n  \"nomeLocal\": \"Hotel Central\",\n  \"dataCheckin\": \"2026-03-01\",\n  \"dataCheckout\": \"2026-03-05\",\n  \"precoTotal\": 800,\n  \"precoPorPessoa\": 200,\n  \"regrasHospedagem\": \"Regras do hotel\",\n  \"statusReserva\": \"CONFIRMADA\"\n}"
+            },
+            "url": "{{baseUrl}}/hospedagens"
+          }
+        },
+        {
+          "name": "GET /hospedagens",
+          "request": { "method": "GET", "url": "{{baseUrl}}/hospedagens" }
+        },
+        {
+          "name": "GET /hospedagens/:id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/hospedagens/1" }
+        },
+        {
+          "name": "PATCH /hospedagens/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statusReserva\": \"CANCELADA\"\n}"
+            },
+            "url": "{{baseUrl}}/hospedagens/1"
+          }
+        },
+        {
+          "name": "DELETE /hospedagens/:id",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/hospedagens/1" }
+        }
+      ]
+    },
+    {
+      "name": "Anuncios",
+      "item": [
+        {
+          "name": "POST /anuncios",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPacoteViagem\": 1,\n  \"idOrganizador\": 1,\n  \"tituloAnuncio\": \"Pacote promocional\",\n  \"descricaoAnuncio\": \"Descricao do anuncio\",\n  \"statusAnuncio\": \"ATIVO\",\n  \"orcamento\": 300,\n  \"dataInicio\": \"2026-03-01\",\n  \"dataFim\": \"2026-03-10\"\n}"
+            },
+            "url": "{{baseUrl}}/anuncios"
+          }
+        },
+        {
+          "name": "GET /anuncios",
+          "request": { "method": "GET", "url": "{{baseUrl}}/anuncios" }
+        },
+        {
+          "name": "GET /anuncios/:id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/anuncios/1" }
+        },
+        {
+          "name": "PATCH /anuncios/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statusAnuncio\": \"INATIVO\"\n}"
+            },
+            "url": "{{baseUrl}}/anuncios/1"
+          }
+        },
+        {
+          "name": "DELETE /anuncios/:id",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/anuncios/1" }
+        }
+      ]
+    },
+    {
+      "name": "Solicitacoes",
+      "item": [
+        {
+          "name": "POST /solicitacoes/pacote/:idPacoteViagem",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idUser\": 2,\n  \"mensagemSolicitacao\": \"Quero participar\"\n}"
+            },
+            "url": "{{baseUrl}}/solicitacoes/pacote/1"
+          }
+        },
+        {
+          "name": "POST /solicitacoes/:id/aceitar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idUserOrganizador\": 1\n}"
+            },
+            "url": "{{baseUrl}}/solicitacoes/1/aceitar"
+          }
+        },
+        {
+          "name": "POST /solicitacoes/:id/rejeitar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idUserOrganizador\": 1,\n  \"motivoRecusa\": \"Sem vagas\"\n}"
+            },
+            "url": "{{baseUrl}}/solicitacoes/1/rejeitar"
+          }
+        },
+        {
+          "name": "GET /solicitacoes/:id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/solicitacoes/1" }
+        },
+        {
+          "name": "GET /solicitacoes/pacote/:idPacoteViagem",
+          "request": { "method": "GET", "url": "{{baseUrl}}/solicitacoes/pacote/1" }
+        }
+      ]
+    },
+    {
+      "name": "Avaliacoes",
+      "item": [
+        {
+          "name": "POST /avaliacoes",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"VIAJANTE\",\n  \"idUserAutor\": 2,\n  \"idPacoteViagem\": 1,\n  \"idUserAvaliado\": 3,\n  \"nota\": 5,\n  \"comentario\": \"Excelente\"\n}"
+            },
+            "url": "{{baseUrl}}/avaliacoes"
+          }
+        },
+        {
+          "name": "GET /avaliacoes/pendentes/:idPacoteViagem/:idUserAutor",
+          "request": { "method": "GET", "url": "{{baseUrl}}/avaliacoes/pendentes/1/2" }
+        }
+      ]
+    }
+  ]
+}
