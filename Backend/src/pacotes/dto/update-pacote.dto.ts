@@ -1,5 +1,14 @@
-import { IsDate, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsDate, IsIn, IsInt, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
+
+const tiposPacote = [
+  'ROTEIRO_COMPLETO',
+  'COMPARTILHADO',
+  'BATE_VOLTA',
+  'APENAS_CARONA',
+  'APENAS_HOSPEDAGEM',
+  'APENAS_GUIA_TURISTICO',
+] as const;
 
 export class UpdatePacoteDto {
   @IsOptional()
@@ -21,8 +30,8 @@ export class UpdatePacoteDto {
   descricao?: string;
 
   @IsOptional()
-  @IsString()
-  tipoPacoteViagem?: string;
+  @IsIn(tiposPacote)
+  tipoPacoteViagem?: (typeof tiposPacote)[number];
 
   @IsOptional()
   @IsString()

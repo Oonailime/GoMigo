@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, ParseIntPipe } from '@nestjs/common';
 import { CreatePacoteDto } from './dto/create-pacote.dto';
 import { UpdatePacoteDto } from './dto/update-pacote.dto';
+import { SearchPacotesDto } from './dto/search-pacotes.dto';
 import { PacotesService } from './pacotes.service';
 
 @Controller('pacotes')
@@ -15,6 +16,11 @@ export class PacotesController {
   @Get()
   findAll() {
     return this.pacotesService.findAll();
+  }
+
+  @Get('search')
+  search(@Query() query: SearchPacotesDto) {
+    return this.pacotesService.search(query);
   }
 
   @Get('anunciados')

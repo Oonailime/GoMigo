@@ -89,6 +89,15 @@ model Assinatura {
   @@map("tbAssinatura")
 }
 
+enum TipoPacoteViagem {
+  ROTEIRO_COMPLETO
+  COMPARTILHADO
+  BATE_VOLTA
+  APENAS_CARONA
+  APENAS_HOSPEDAGEM
+  APENAS_GUIA_TURISTICO
+}
+
 model PacoteViagem {
   id                       Int                           @id @default(autoincrement())
   idOrganizador            Int                           @map("idOrganizador")
@@ -96,7 +105,7 @@ model PacoteViagem {
   idEnderecoDestino        Int                           @map("idEnderecoDestino")
   titulo                   String                        @db.VarChar(120)
   descricao                String?                       @db.Text
-  tipoPacoteViagem         String                        @map("tipoPacoteViagem") @db.VarChar(30)
+  tipoPacoteViagem         TipoPacoteViagem                        @map("tipoPacoteViagem")
   status                   String                        @db.VarChar(30)
   vagas                    Int
   regrasViagem             String                        @map("regrasViagem") @db.Text
@@ -418,7 +427,7 @@ model Avaliacao {
   idUserAvaliado Int?         @map("idUserAvaliado")
   idCarona       Int?         @map("idCarona")
   idHospedagem   Int?         @map("idHospedagem")
-  tipo           TipoAvaliacao @map("tipoAvaliacao") @db.VarChar(30)
+  tipo           TipoAvaliacao @map("tipoAvaliacao")
   nota           Int
   comentario     String?      @db.Text
   dataAvaliacao  DateTime     @default(now()) @map("dataAvaliacao") @db.Timestamptz(6)
@@ -508,5 +517,7 @@ model BloqueioUsuario {
 
   @@map("tbBloqueioUsuario")
 }
+
+
 
 
