@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, ParseIntPipe } from '@nestjs/common';
 import { AceitarSolicitacaoDto } from './dto/aceitar-solicitacao.dto';
 import { RejeitarSolicitacaoDto } from './dto/rejeitar-solicitacao.dto';
 import { SolicitarParticipacaoDto } from './dto/solicitar-participacao.dto';
@@ -10,25 +10,35 @@ export class SolicitacoesController {
 
   @Post('/pacote/:idPacoteViagem')
   solicitar(
-    @Param('idPacoteViagem') idPacoteViagem: string,
+    @Param('idPacoteViagem', ParseIntPipe) idPacoteViagem: number,
     @Body() body: SolicitarParticipacaoDto,
   ) {
-    return this.solicitacoesService.solicitarParticipacao(Number(idPacoteViagem), body);
+    return this.solicitacoesService.solicitarParticipacao(idPacoteViagem, body);
   }
 
   @Post(':id/aceitar')
   aceitar(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() body: AceitarSolicitacaoDto,
   ) {
-    return this.solicitacoesService.aceitarSolicitacao(Number(id), body.idUserOrganizador);
+    return this.solicitacoesService.aceitarSolicitacao(id, body.idUserOrganizador);
   }
 
   @Post(':id/rejeitar')
   rejeitar(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() body: RejeitarSolicitacaoDto,
   ) {
-    return this.solicitacoesService.rejeitarSolicitacao(Number(id), body.idUserOrganizador, body.motivoRecusa);
+    return this.solicitacoesService.rejeitarSolicitacao(id, body.idUserOrganizador, body.motivoRecusa);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.solicitacoesService.findOne(id);
+  }
+
+  @Get('/pacote/:idPacoteViagem')
+  findByPacote(@Param('idPacoteViagem', ParseIntPipe) idPacoteViagem: number) {
+    return this.solicitacoesService.findByPacote(idPacoteViagem);
   }
 }

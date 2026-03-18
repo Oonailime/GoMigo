@@ -15,6 +15,23 @@ export class UsersService {
     return this.prisma.user.create({ data });
   }
 
+  async findAll() {
+    return this.prisma.user.findMany();
+  }
+
+  async findOne(id: number) {
+    if (!id || Number.isNaN(id)) {
+      throw new BadRequestException('id invalido');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('usuario nao encontrado');
+    }
+
+    return user;
+  }
+
   async update(
     id: number,
     data: Partial<{

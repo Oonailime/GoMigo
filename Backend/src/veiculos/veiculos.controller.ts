@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe } from '@nestjs/common';
 import { CreateVeiculoDto } from './dto/create-veiculo.dto';
 import { UpdateVeiculoDto } from './dto/update-veiculo.dto';
 import { VeiculosService } from './veiculos.service';
@@ -12,13 +12,23 @@ export class VeiculosController {
     return this.veiculosService.create(body);
   }
 
+  @Get()
+  findAll() {
+    return this.veiculosService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.veiculosService.findOne(id);
+  }
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: UpdateVeiculoDto) {
-    return this.veiculosService.update(Number(id), body);
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateVeiculoDto) {
+    return this.veiculosService.update(id, body);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.veiculosService.delete(Number(id));
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.veiculosService.delete(id);
   }
 }

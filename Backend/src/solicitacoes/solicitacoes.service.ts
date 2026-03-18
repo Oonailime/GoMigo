@@ -153,4 +153,27 @@ export class SolicitacoesService {
       },
     });
   }
+
+  async findOne(id: number) {
+    if (!id || Number.isNaN(id)) {
+      throw new BadRequestException('idSolicitacao invalido');
+    }
+
+    const solicitacao = await this.prisma.solicitacaoParticipacao.findUnique({ where: { id } });
+    if (!solicitacao) {
+      throw new NotFoundException('solicitacao nao encontrada');
+    }
+
+    return solicitacao;
+  }
+
+  async findByPacote(idPacoteViagem: number) {
+    if (!idPacoteViagem || Number.isNaN(idPacoteViagem)) {
+      throw new BadRequestException('idPacoteViagem invalido');
+    }
+
+    return this.prisma.solicitacaoParticipacao.findMany({
+      where: { idPacoteViagem },
+    });
+  }
 }

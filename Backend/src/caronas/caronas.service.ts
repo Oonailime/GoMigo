@@ -23,6 +23,23 @@ export class CaronasService {
     return this.prisma.carona.create({ data });
   }
 
+  async findAll() {
+    return this.prisma.carona.findMany();
+  }
+
+  async findOne(id: number) {
+    if (!id || Number.isNaN(id)) {
+      throw new BadRequestException('id invalido');
+    }
+
+    const carona = await this.prisma.carona.findUnique({ where: { id } });
+    if (!carona) {
+      throw new NotFoundException('carona nao encontrada');
+    }
+
+    return carona;
+  }
+
   async update(
     id: number,
     data: Partial<{

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe } from '@nestjs/common';
 import { CreateCaronaDto } from './dto/create-carona.dto';
 import { UpdateCaronaDto } from './dto/update-carona.dto';
 import { CaronasService } from './caronas.service';
@@ -12,13 +12,23 @@ export class CaronasController {
     return this.caronasService.create(body);
   }
 
+  @Get()
+  findAll() {
+    return this.caronasService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.caronasService.findOne(id);
+  }
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: UpdateCaronaDto) {
-    return this.caronasService.update(Number(id), body);
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateCaronaDto) {
+    return this.caronasService.update(id, body);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.caronasService.delete(Number(id));
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.caronasService.delete(id);
   }
 }

@@ -24,21 +24,41 @@ export class PacotesService {
     return this.prisma.pacoteViagem.create({ data });
   }
 
-  async update(id: number, data: Partial<{
-    idEnderecoPartida: number;
-    idEnderecoDestino: number;
-    titulo: string;
-    descricao?: string;
-    tipoPacoteViagem: string;
-    status: string;
-    vagas: number;
-    regrasViagem: string;
-    valorTotalPrevisto?: number;
-    valorPorPessoaPrevisto?: number;
-    dataInicio?: Date;
-    dataFim?: Date;
-    privacidade: string;
-  }>) {
+  async findAll() {
+    return this.prisma.pacoteViagem.findMany();
+  }
+
+  async findOne(id: number) {
+    if (!id || Number.isNaN(id)) {
+      throw new BadRequestException('id invalido');
+    }
+
+    const pacote = await this.prisma.pacoteViagem.findUnique({ where: { id } });
+    if (!pacote) {
+      throw new NotFoundException('pacote nao encontrado');
+    }
+
+    return pacote;
+  }
+
+  async update(
+    id: number,
+    data: Partial<{
+      idEnderecoPartida: number;
+      idEnderecoDestino: number;
+      titulo: string;
+      descricao?: string;
+      tipoPacoteViagem: string;
+      status: string;
+      vagas: number;
+      regrasViagem: string;
+      valorTotalPrevisto?: number;
+      valorPorPessoaPrevisto?: number;
+      dataInicio?: Date;
+      dataFim?: Date;
+      privacidade?: string;
+    }>,
+  ) {
     if (!id || Number.isNaN(id)) {
       throw new BadRequestException('id invalido');
     }

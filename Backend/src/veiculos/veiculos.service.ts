@@ -18,6 +18,23 @@ export class VeiculosService {
     return this.prisma.veiculo.create({ data });
   }
 
+  async findAll() {
+    return this.prisma.veiculo.findMany();
+  }
+
+  async findOne(id: number) {
+    if (!id || Number.isNaN(id)) {
+      throw new BadRequestException('id invalido');
+    }
+
+    const veiculo = await this.prisma.veiculo.findUnique({ where: { id } });
+    if (!veiculo) {
+      throw new NotFoundException('veiculo nao encontrado');
+    }
+
+    return veiculo;
+  }
+
   async update(
     id: number,
     data: Partial<{

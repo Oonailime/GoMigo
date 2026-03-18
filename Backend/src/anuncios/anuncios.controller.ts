@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe } from '@nestjs/common';
 import { CreateAnuncioDto } from './dto/create-anuncio.dto';
 import { UpdateAnuncioDto } from './dto/update-anuncio.dto';
 import { AnunciosService } from './anuncios.service';
@@ -12,13 +12,23 @@ export class AnunciosController {
     return this.anunciosService.create(body);
   }
 
+  @Get()
+  findAll() {
+    return this.anunciosService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.anunciosService.findOne(id);
+  }
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: UpdateAnuncioDto) {
-    return this.anunciosService.update(Number(id), body);
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateAnuncioDto) {
+    return this.anunciosService.update(id, body);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.anunciosService.delete(Number(id));
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.anunciosService.delete(id);
   }
 }

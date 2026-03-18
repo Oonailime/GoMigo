@@ -20,6 +20,23 @@ export class HospedagensService {
     return this.prisma.hospedagem.create({ data });
   }
 
+  async findAll() {
+    return this.prisma.hospedagem.findMany();
+  }
+
+  async findOne(id: number) {
+    if (!id || Number.isNaN(id)) {
+      throw new BadRequestException('id invalido');
+    }
+
+    const hospedagem = await this.prisma.hospedagem.findUnique({ where: { id } });
+    if (!hospedagem) {
+      throw new NotFoundException('hospedagem nao encontrada');
+    }
+
+    return hospedagem;
+  }
+
   async update(
     id: number,
     data: Partial<{

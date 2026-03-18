@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe } from '@nestjs/common';
 import { CreatePacoteDto } from './dto/create-pacote.dto';
 import { UpdatePacoteDto } from './dto/update-pacote.dto';
 import { PacotesService } from './pacotes.service';
@@ -12,18 +12,28 @@ export class PacotesController {
     return this.pacotesService.create(body);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() body: UpdatePacoteDto) {
-    return this.pacotesService.update(Number(id), body);
-  }
-
-  @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.pacotesService.delete(Number(id));
+  @Get()
+  findAll() {
+    return this.pacotesService.findAll();
   }
 
   @Get('anunciados')
   listarAnunciados() {
     return this.pacotesService.listarAnunciados();
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.pacotesService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdatePacoteDto) {
+    return this.pacotesService.update(id, body);
+  }
+
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.pacotesService.delete(id);
   }
 }

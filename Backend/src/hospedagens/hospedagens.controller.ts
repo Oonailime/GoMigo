@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe } from '@nestjs/common';
 import { CreateHospedagemDto } from './dto/create-hospedagem.dto';
 import { UpdateHospedagemDto } from './dto/update-hospedagem.dto';
 import { HospedagensService } from './hospedagens.service';
@@ -12,13 +12,23 @@ export class HospedagensController {
     return this.hospedagensService.create(body);
   }
 
+  @Get()
+  findAll() {
+    return this.hospedagensService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.hospedagensService.findOne(id);
+  }
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: UpdateHospedagemDto) {
-    return this.hospedagensService.update(Number(id), body);
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateHospedagemDto) {
+    return this.hospedagensService.update(id, body);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.hospedagensService.delete(Number(id));
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.hospedagensService.delete(id);
   }
 }

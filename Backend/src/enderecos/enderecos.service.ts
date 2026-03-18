@@ -17,6 +17,23 @@ export class EnderecosService {
     return this.prisma.endereco.create({ data });
   }
 
+  async findAll() {
+    return this.prisma.endereco.findMany();
+  }
+
+  async findOne(id: number) {
+    if (!id || Number.isNaN(id)) {
+      throw new BadRequestException('id invalido');
+    }
+
+    const endereco = await this.prisma.endereco.findUnique({ where: { id } });
+    if (!endereco) {
+      throw new NotFoundException('endereco nao encontrado');
+    }
+
+    return endereco;
+  }
+
   async update(
     id: number,
     data: Partial<{

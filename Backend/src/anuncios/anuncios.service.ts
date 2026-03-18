@@ -19,6 +19,23 @@ export class AnunciosService {
     return this.prisma.anuncioPacote.create({ data });
   }
 
+  async findAll() {
+    return this.prisma.anuncioPacote.findMany();
+  }
+
+  async findOne(id: number) {
+    if (!id || Number.isNaN(id)) {
+      throw new BadRequestException('id invalido');
+    }
+
+    const anuncio = await this.prisma.anuncioPacote.findUnique({ where: { id } });
+    if (!anuncio) {
+      throw new NotFoundException('anuncio nao encontrado');
+    }
+
+    return anuncio;
+  }
+
   async update(
     id: number,
     data: Partial<{
