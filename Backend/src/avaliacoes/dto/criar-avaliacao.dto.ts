@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min, ValidateIf } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CriarAvaliacaoDto {
@@ -9,18 +9,19 @@ export class CriarAvaliacaoDto {
   @IsInt()
   idUserAutor: number;
 
-  @IsOptional()
   @Type(() => Number)
   @IsInt()
-  idPacoteViagem?: number;
+  idPacoteViagem: number;
 
-  @IsOptional()
+  @ValidateIf((o) => o.tipo !== 'PACOTE')
   @Type(() => Number)
   @IsInt()
   idUserAvaliado?: number;
 
   @Type(() => Number)
   @IsInt()
+  @Min(1)
+  @Max(5)
   nota: number;
 
   @IsOptional()

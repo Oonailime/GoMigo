@@ -405,6 +405,12 @@ model Mensagem {
   @@map("tbMensagem")
 }
 
+enum TipoAvaliacao {
+  PACOTE
+  ORGANIZADOR
+  VIAJANTE
+}
+
 model Avaliacao {
   id             Int          @id @default(autoincrement())
   idPacoteViagem Int?         @map("idPacoteViagem")
@@ -412,6 +418,7 @@ model Avaliacao {
   idUserAvaliado Int?         @map("idUserAvaliado")
   idCarona       Int?         @map("idCarona")
   idHospedagem   Int?         @map("idHospedagem")
+  tipo           TipoAvaliacao @map("tipoAvaliacao") @db.VarChar(30)
   nota           Int
   comentario     String?      @db.Text
   dataAvaliacao  DateTime     @default(now()) @map("dataAvaliacao") @db.Timestamptz(6)
@@ -421,6 +428,7 @@ model Avaliacao {
   carona         Carona?      @relation(fields: [idCarona], references: [id])
   hospedagem     Hospedagem?  @relation(fields: [idHospedagem], references: [id])
 
+  @@unique([idPacoteViagem, idUserAutor, idUserAvaliado, tipo])
   @@map("tbAvaliacao")
 }
 
@@ -500,3 +508,4 @@ model BloqueioUsuario {
 
   @@map("tbBloqueioUsuario")
 }
+
