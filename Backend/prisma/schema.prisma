@@ -141,6 +141,7 @@ model SolicitacaoParticipacao {
   pacoteViagem       PacoteViagem @relation(fields: [idPacoteViagem], references: [id])
   user               User      @relation(fields: [idUser], references: [id])
 
+  @@unique([idPacoteViagem, idUser, statusSolicitacao])
   @@map("tbSolicitacaoParticipacao")
 }
 

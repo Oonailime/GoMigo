@@ -5,11 +5,34 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class SolicitacoesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async runSerializableTransaction<T>(
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+    maxRetries = 3,
+  ): Promise<T> {
+    for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
+      try {
+        return await this.prisma.$transaction(fn, { isolationLevel: 'Serializable' });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2034' &&
+          attempt < maxRetries
+        ) {
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new ConflictException('conflito de concorrencia, tente novamente');
+  }
 
   async solicitarParticipacao(idPacoteViagem: number, data: {
     idUser: number;
@@ -24,26 +47,21 @@ export class SolicitacoesService {
       throw new NotFoundException('pacote nao encontrado');
     }
 
-    const solicitacaoExistente = await this.prisma.solicitacaoParticipacao.findFirst({
-      where: {
-        idPacoteViagem,
-        idUser: data.idUser,
-        statusSolicitacao: 'PENDENTE',
-      },
-    });
-
-    if (solicitacaoExistente) {
-      throw new ConflictException('solicitacao ja existente');
+    try {
+      return await this.prisma.solicitacaoParticipacao.create({
+        data: {
+          idPacoteViagem,
+          idUser: data.idUser,
+          mensagemSolicitacao: data.mensagemSolicitacao,
+          statusSolicitacao: 'PENDENTE',
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('solicitacao ja existente');
+      }
+      throw error;
     }
-
-    return this.prisma.solicitacaoParticipacao.create({
-      data: {
-        idPacoteViagem,
-        idUser: data.idUser,
-        mensagemSolicitacao: data.mensagemSolicitacao,
-        statusSolicitacao: 'PENDENTE',
-      },
-    });
   }
 
   async aceitarSolicitacao(idSolicitacao: number, idUserOrganizador: number) {
@@ -51,36 +69,36 @@ export class SolicitacoesService {
       throw new BadRequestException('idSolicitacao invalido');
     }
 
-    const solicitacao = await this.prisma.solicitacaoParticipacao.findUnique({
-      where: { id: idSolicitacao },
-    });
+    return this.runSerializableTransaction(async (tx) => {
+      const solicitacao = await tx.solicitacaoParticipacao.findUnique({
+        where: { id: idSolicitacao },
+      });
 
-    if (!solicitacao) {
-      throw new NotFoundException('solicitacao nao encontrada');
-    }
+      if (!solicitacao) {
+        throw new NotFoundException('solicitacao nao encontrada');
+      }
 
-    if (solicitacao.statusSolicitacao !== 'PENDENTE') {
-      throw new ConflictException('solicitacao ja processada');
-    }
+      if (solicitacao.statusSolicitacao !== 'PENDENTE') {
+        throw new ConflictException('solicitacao ja processada');
+      }
 
-    const pacote = await this.prisma.pacoteViagem.findUnique({ where: { id: solicitacao.idPacoteViagem } });
-    if (!pacote) {
-      throw new NotFoundException('pacote nao encontrado');
-    }
+      const pacote = await tx.pacoteViagem.findUnique({ where: { id: solicitacao.idPacoteViagem } });
+      if (!pacote) {
+        throw new NotFoundException('pacote nao encontrado');
+      }
 
-    if (pacote.idOrganizador !== idUserOrganizador) {
-      throw new ForbiddenException('apenas o organizador pode aceitar');
-    }
+      if (pacote.idOrganizador !== idUserOrganizador) {
+        throw new ForbiddenException('apenas o organizador pode aceitar');
+      }
 
-    const totalViajantes = await this.prisma.viajante.count({
-      where: { idPacoteViagem: pacote.id },
-    });
+      const totalViajantes = await tx.viajante.count({
+        where: { idPacoteViagem: pacote.id },
+      });
 
-    if (totalViajantes >= pacote.vagas) {
-      throw new ConflictException('pacote sem vagas disponiveis');
-    }
+      if (totalViajantes >= pacote.vagas) {
+        throw new ConflictException('pacote sem vagas disponiveis');
+      }
 
-    return this.prisma.$transaction(async (tx) => {
       await tx.viajante.create({
         data: {
           idPacoteViagem: pacote.id,
