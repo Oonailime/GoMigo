@@ -6,7 +6,7 @@
   position: relative;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--panelStrong) 68%, transparent);
   color: var(--text);
   cursor: pointer;
   padding: 10px 14px;
@@ -51,6 +51,10 @@
   background: var(--panelStrong, rgba(8, 16, 24, 0.96));
   box-shadow: 0 24px 40px rgba(0, 0, 0, 0.24);
   z-index: 30;
+}
+
+:global(:root[data-theme="light"]) .panel {
+  background: #fffaf4;
 }
 
 .header {
@@ -102,6 +106,20 @@
 
 .itemButton:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+
+:global(:root[data-theme="light"]) .trigger {
+  background: rgba(17, 33, 49, 0.06);
+}
+
+:global(:root[data-theme="light"]) .item,
+:global(:root[data-theme="light"]) .itemButton {
+  background: rgba(17, 33, 49, 0.04);
+}
+
+:global(:root[data-theme="light"]) .item:hover,
+:global(:root[data-theme="light"]) .itemButton:hover {
+  background: rgba(17, 33, 49, 0.08);
 }
 
 .empty {

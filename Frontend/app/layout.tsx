@@ -30,8 +30,23 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const themeInitScript = `
+    (function () {
+      try {
+        var storedTheme = window.localStorage.getItem('gomigo-theme');
+        var theme = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'dark';
+        document.documentElement.dataset.theme = theme;
+      } catch (error) {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    })();
+  `;
+
   return (
-    <html lang="pt-BR" data-theme="dark">
+    <html lang="pt-BR" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className={`${bodyFont.variable} ${displayFont.variable}`}>
         <AppSessionProvider>{children}</AppSessionProvider>
       </body>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../page.module.css";
 import {
@@ -13,6 +13,7 @@ import { NotificationBell } from "./notification-bell";
 import { SocialLoginButtons } from "./social-login-buttons";
 import { ThemeToggle } from "./theme-toggle";
 import { TripModeSelect } from "./trip-mode-select";
+import { useThemeMode } from "./use-theme-mode";
 import { UserMenu } from "./user-menu";
 import dynamic from "next/dynamic";
 
@@ -54,20 +55,14 @@ const DateRangeField = dynamic(
   },
 );
 
-type ThemeMode = "dark" | "light";
-
 export function TravelPlannerForm() {
   const router = useRouter();
-  const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
+  const { themeMode, setThemeMode } = useThemeMode();
   const [originCity, setOriginCity] = useState("");
   const [destinationCity, setDestinationCity] = useState("");
   const [tripMode, setTripMode] = useState(LANDING_TRIP_MODES[0].value);
   const [travelStartDate, setTravelStartDate] = useState("");
   const [travelEndDate, setTravelEndDate] = useState("");
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = themeMode;
-  }, [themeMode]);
 
   const handleTravelStartDateChange = (value: string) => {
     setTravelStartDate(value);

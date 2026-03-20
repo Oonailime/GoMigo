@@ -1,8 +1,7 @@
 "use client";
 
+import type { ThemeMode } from "./theme-provider";
 import styles from "./theme-toggle.module.css";
-
-type ThemeMode = "dark" | "light";
 
 type ThemeToggleProps = {
   currentTheme: ThemeMode;

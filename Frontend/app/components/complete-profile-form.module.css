@@ -10,7 +10,7 @@
 }
 
 .label {
-  color: #d7e0ea;
+  color: var(--text);
   font-size: 0.94rem;
   font-weight: 600;
 }
@@ -18,10 +18,10 @@
 .input {
   width: 100%;
   padding: 14px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #f4f7fb;
+  background: color-mix(in srgb, var(--panelStrong) 78%, transparent);
+  color: var(--text);
   font-size: 1rem;
 }
 
@@ -29,6 +29,10 @@
   outline: none;
   border-color: rgba(241, 173, 73, 0.7);
   box-shadow: 0 0 0 4px rgba(241, 173, 73, 0.14);
+}
+
+.input::placeholder {
+  color: var(--soft);
 }
 
 .error {
@@ -71,6 +75,6 @@
 }
 
 .secondaryButton {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f4f7fb;
+  background: color-mix(in srgb, var(--panelStrong) 70%, transparent);
+  color: var(--text);
 }

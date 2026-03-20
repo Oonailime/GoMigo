@@ -16,6 +16,7 @@ import { CityAutocomplete } from "../components/city-autocomplete";
 import { NotificationBell } from "../components/notification-bell";
 import { ThemeToggle } from "../components/theme-toggle";
 import { TripModeSelect } from "../components/trip-mode-select";
+import { useThemeMode } from "../components/use-theme-mode";
 import { UserMenu } from "../components/user-menu";
 import styles from "./search.module.css";
 
@@ -31,8 +32,6 @@ const SEARCH_MODE_OPTIONS = [
   { value: "TODOS", label: "Todos os formatos" },
   ...BRAZILIAN_TRIP_MODES,
 ];
-
-type ThemeMode = "dark" | "light";
 
 type SearchResponse = {
   modo: "EXATO" | "INTERSECCAO" | "SEM_RESULTADOS";
@@ -70,7 +69,7 @@ export default function SearchPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
-  const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
+  const { themeMode, setThemeMode } = useThemeMode();
   const [originCity, setOriginCity] = useState("");
   const [destinationCity, setDestinationCity] = useState("");
   const [tripMode, setTripMode] = useState("TODOS");
@@ -96,10 +95,6 @@ export default function SearchPage() {
   const [requestVisualStatus, setRequestVisualStatus] = useState<
     Record<number, "idle" | "sending" | "success">
   >({});
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = themeMode;
-  }, [themeMode]);
 
   useEffect(() => {
     if (typeof session?.backendUserId === "number") {

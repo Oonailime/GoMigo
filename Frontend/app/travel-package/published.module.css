@@ -13,7 +13,7 @@
     linear-gradient(180deg, #08131c 0%, #102434 100%);
 }
 
-:root[data-theme="light"] .page {
+:global(:root[data-theme="light"]) .page {
   --line: rgba(77, 61, 38, 0.14);
   --text: #2b2218;
   --muted: rgba(43, 34, 24, 0.72);
@@ -21,6 +21,9 @@
   --accent: #146b63;
   --buttonText: #f7fbfa;
   --panelStrong: rgba(255, 255, 255, 0.99);
+  background:
+    radial-gradient(circle at top, rgba(20, 107, 99, 0.1), transparent 34%),
+    linear-gradient(180deg, #f4efe6 0%, #fbf6ee 100%);
 }
 
 .shell {

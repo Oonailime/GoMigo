@@ -1,19 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { NotificationBell } from "./notification-bell";
 import { ThemeToggle } from "./theme-toggle";
+import { useThemeMode } from "./use-theme-mode";
 import { UserMenu } from "./user-menu";
 import styles from "./app-header-actions.module.css";
 
-type ThemeMode = "dark" | "light";
-
 export function AppHeaderActions() {
-  const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = themeMode;
-  }, [themeMode]);
+  const { themeMode, setThemeMode } = useThemeMode();
 
   return (
     <div className={styles.actions}>

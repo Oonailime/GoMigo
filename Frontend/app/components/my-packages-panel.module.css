@@ -18,15 +18,15 @@
 }
 
 .overviewLabel {
-  color: rgba(216, 227, 238, 0.76);
+  color: var(--muted);
 }
 
 .card,
 .emptyState,
 .state {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--line);
   border-radius: 24px;
-  background: rgba(8, 16, 24, 0.84);
+  background: var(--panelStrong);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
 }
 
@@ -45,7 +45,7 @@
 .cardTitle,
 .sectionTitle {
   margin: 0;
-  color: #f4f7fb;
+  color: var(--text);
 }
 
 .emptyText,
@@ -56,7 +56,7 @@
 .cardMeta,
 .applicantMeta {
   margin: 0;
-  color: rgba(216, 227, 238, 0.76);
+  color: var(--muted);
   line-height: 1.6;
 }
 
@@ -90,7 +90,7 @@
 
 .editLink {
   background: rgba(255, 255, 255, 0.08);
-  color: #f4f7fb;
+  color: var(--text);
 }
 
 .detailsLink {
@@ -133,7 +133,7 @@
 .counter,
 .pending {
   background: rgba(255, 255, 255, 0.08);
-  color: #dfe8f1;
+  color: var(--text);
 }
 
 .accepted {
@@ -162,13 +162,22 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
+:global(:root[data-theme="light"]) .solicitation,
+:global(:root[data-theme="light"]) .editLink,
+:global(:root[data-theme="light"]) .rejectButton,
+:global(:root[data-theme="light"]) .metric,
+:global(:root[data-theme="light"]) .counter,
+:global(:root[data-theme="light"]) .pending {
+  background: rgba(17, 33, 49, 0.06);
+}
+
 .solicitationInfo {
   display: grid;
   gap: 6px;
 }
 
 .applicantName {
-  color: #f4f7fb;
+  color: var(--text);
 }
 
 .actionRow {
@@ -191,7 +200,7 @@
 
 .rejectButton {
   background: rgba(255, 255, 255, 0.08);
-  color: #f4f7fb;
+  color: var(--text);
 }
 
 .approveButton:disabled,

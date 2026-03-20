@@ -13,7 +13,7 @@
     linear-gradient(180deg, #08131c 0%, #102434 100%);
 }
 
-:root[data-theme="light"] .page {
+:global(:root[data-theme="light"]) .page {
   --line: rgba(77, 61, 38, 0.14);
   --text: #2b2218;
   --muted: rgba(43, 34, 24, 0.72);
@@ -21,6 +21,9 @@
   --accent: #146b63;
   --buttonText: #f7fbfa;
   --panelStrong: rgba(255, 255, 255, 0.99);
+  background:
+    radial-gradient(circle at top, rgba(20, 107, 99, 0.1), transparent 34%),
+    linear-gradient(180deg, #f4efe6 0%, #fbf6ee 100%);
 }
 
 .shell {
@@ -64,9 +67,9 @@
 
 .heroCard,
 .card {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--line);
   border-radius: 24px;
-  background: rgba(8, 16, 24, 0.84);
+  background: var(--panelStrong);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
 }
 
@@ -163,6 +166,11 @@
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.04);
   color: var(--muted);
+}
+
+:global(:root[data-theme="light"]) .secondaryLink,
+:global(:root[data-theme="light"]) .participant {
+  background: rgba(17, 33, 49, 0.06);
 }
 
 @media (max-width: 860px) {
