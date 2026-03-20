@@ -1,4 +1,4 @@
-import { IsDate, IsIn, IsNotEmpty, IsString } from 'class-validator';
+import { IsDate, IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 const tiposPacote = [
@@ -11,22 +11,37 @@ const tiposPacote = [
 ] as const;
 
 export class SearchPacotesDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  cidadePartida: string;
+  cidadePartida?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  cidadeDestino: string;
+  cidadeDestino?: string;
 
+  @IsOptional()
   @IsIn(tiposPacote)
-  tipo: (typeof tiposPacote)[number];
+  tipo?: (typeof tiposPacote)[number];
 
+  @IsOptional()
   @Type(() => Date)
   @IsDate()
-  dataInicio: Date;
+  dataInicio?: Date;
 
+  @IsOptional()
   @Type(() => Date)
   @IsDate()
-  dataFim: Date;
+  dataFim?: Date;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  pageSize?: number;
 }

@@ -3,8 +3,20 @@ import { auth } from "@/auth";
 import { TravelPackageForm } from "../../components/travel-package-form";
 import styles from "./new.module.css";
 
-export default async function TravelPackageNewPage() {
+const backendUrl =
+  process.env.BACKEND_URL ??
+  process.env.NEXT_PUBLIC_BACKEND_URL ??
+  "http://localhost:3001/api";
+
+export default async function TravelPackageNewPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ edit?: string }>;
+}) {
   const session = await auth();
+  const params = searchParams ? await searchParams : undefined;
+  const editPackageId = params?.edit ?? null;
+  let initialPackage = null;
 
   if (!session) {
     redirect("/login");
@@ -14,18 +26,44 @@ export default async function TravelPackageNewPage() {
     redirect("/complete-profile");
   }
 
+  if (editPackageId) {
+    if (!session.backendAccessToken) {
+      redirect("/travel-package");
+    }
+
+    const response = await fetch(`${backendUrl}/pacotes/${editPackageId}/gerenciar`, {
+      headers: {
+        Authorization: `Bearer ${session.backendAccessToken}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      redirect("/travel-package");
+    }
+
+    initialPackage = await response.json();
+  }
+
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
         <div>
-          <h1 className={styles.title}>Criar pacote de viagem</h1>
+          <h1 className={styles.title}>
+            {editPackageId ? "Editar pacote de viagem" : "Criar pacote de viagem"}
+          </h1>
           <p className={styles.subtitle}>
-            Preencha os detalhes do pacote para comecar a organizar sua viagem.
+            {editPackageId
+              ? "Atualize os detalhes do seu pacote publicado."
+              : "Preencha os detalhes do pacote para comecar a organizar sua viagem."}
           </p>
         </div>
 
         <section className={styles.panel}>
-          <TravelPackageForm />
+          <TravelPackageForm
+            editPackageId={editPackageId}
+            initialPackage={initialPackage}
+          />
         </section>
       </div>
     </main>

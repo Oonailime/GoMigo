@@ -30,6 +30,29 @@ export class PacotesController {
     return this.pacotesService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('meus')
+  findMine(@Req() req: { user: { sub: number | null } }) {
+    if (!req.user.sub) {
+      throw new UnauthorizedException('usuario sem perfil completo');
+    }
+
+    return this.pacotesService.findByOrganizador(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/gerenciar')
+  findOneForManagement(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: { user: { sub: number | null } },
+  ) {
+    if (!req.user.sub) {
+      throw new UnauthorizedException('usuario sem perfil completo');
+    }
+
+    return this.pacotesService.findOneForOrganizador(id, req.user.sub);
+  }
+
   @Get('search')
   search(@Query() query: SearchPacotesDto) {
     return this.pacotesService.search(query);
@@ -46,7 +69,21 @@ export class PacotesController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdatePacoteDto) {
+  @UseGuards(JwtAuthGuard)
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: { user: { sub: number | null } },
+    @Body() body: UpdatePacoteDto,
+  ) {
+    if (!req.user.sub) {
+      throw new UnauthorizedException('usuario sem perfil completo');
+    }
+
+    const pacote = await this.pacotesService.findOne(id);
+    if (pacote.idOrganizador !== req.user.sub) {
+      throw new UnauthorizedException('apenas o organizador pode editar o pacote');
+    }
+
     return this.pacotesService.update(id, body);
   }
 

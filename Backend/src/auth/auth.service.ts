@@ -143,4 +143,40 @@ export class AuthService {
       user,
     };
   }
+
+  async getProfile(email: string) {
+    if (!email) {
+      throw new BadRequestException('email invalido');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new UnauthorizedException('usuario nao encontrado');
+    }
+
+    return user;
+  }
+
+  async updateProfile(
+    email: string,
+    data: { name?: string; cpf?: string; phoneNumber?: string },
+  ) {
+    if (!email) {
+      throw new BadRequestException('email invalido');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new UnauthorizedException('usuario nao encontrado');
+    }
+
+    return this.prisma.user.update({
+      where: { email },
+      data: {
+        name: data.name ?? user.name,
+        cpf: data.cpf ?? user.cpf,
+        phoneNumber: data.phoneNumber ?? user.phoneNumber,
+      },
+    });
+  }
 }

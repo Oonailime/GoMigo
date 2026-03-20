@@ -167,13 +167,36 @@ export class SolicitacoesService {
     return solicitacao;
   }
 
-  async findByPacote(idPacoteViagem: number) {
+  async findByPacote(idPacoteViagem: number, idUserOrganizador: number) {
     if (!idPacoteViagem || Number.isNaN(idPacoteViagem)) {
       throw new BadRequestException('idPacoteViagem invalido');
     }
 
+    const pacote = await this.prisma.pacoteViagem.findUnique({
+      where: { id: idPacoteViagem },
+    });
+
+    if (!pacote) {
+      throw new NotFoundException('pacote nao encontrado');
+    }
+
+    if (pacote.idOrganizador !== idUserOrganizador) {
+      throw new ForbiddenException('apenas o organizador pode visualizar as solicitacoes');
+    }
+
     return this.prisma.solicitacaoParticipacao.findMany({
       where: { idPacoteViagem },
+      orderBy: { dataSolicitacao: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phoneNumber: true,
+          },
+        },
+      },
     });
   }
 }

@@ -304,6 +304,25 @@
   gap: 6px;
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.pageIndicator {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.secondaryButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 @media (max-width: 1200px) {
   .filterGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

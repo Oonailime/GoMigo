@@ -1,0 +1,46 @@
+.page {
+  min-height: 100vh;
+  padding: 40px 20px 64px;
+  background:
+    radial-gradient(circle at top, rgba(241, 173, 73, 0.14), transparent 34%),
+    linear-gradient(180deg, #08131c 0%, #102434 100%);
+}
+
+.shell {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 28px;
+}
+
+.header {
+  display: grid;
+  gap: 12px;
+}
+
+.badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(241, 173, 73, 0.14);
+  color: #f1ad49;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: #f4f7fb;
+  font-size: clamp(2.1rem, 4vw, 3rem);
+  line-height: 1.02;
+}
+
+.subtitle {
+  margin: 0;
+  color: rgba(218, 228, 238, 0.76);
+  max-width: 720px;
+  line-height: 1.6;
+}

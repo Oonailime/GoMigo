@@ -1,10 +1,21 @@
 "use client";
 
+import { useRef, useState } from "react";
+import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
+import { useDismissibleLayer } from "./use-dismissible-layer";
 import styles from "./user-menu.module.css";
 
 export function UserMenu() {
   const { data: session, status } = useSession();
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useDismissibleLayer({
+    isOpen,
+    containerRef,
+    onDismiss: () => setIsOpen(false),
+  });
 
   if (status === "loading") {
     return (
@@ -29,20 +40,54 @@ export function UserMenu() {
   }
 
   return (
-    <div className={styles.wrapper}>
-      <div className={styles.userInfo}>
-        <span className={styles.userName}>
-          {session.user.name ?? session.user.email ?? "Usuario"}
-        </span>
-        <span className={styles.userMeta}>Conectado</span>
-      </div>
+    <div className={styles.wrapper} ref={containerRef}>
       <button
         type="button"
-        className={styles.buttonSecondary}
-        onClick={() => signOut({ callbackUrl: "/" })}
+        className={styles.trigger}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        onClick={() => setIsOpen((current) => !current)}
       >
-        Sair
+        <div className={styles.userInfo}>
+          <span className={styles.userName}>
+            {session.user.name ?? session.user.email ?? "Usuario"}
+          </span>
+          <span className={styles.userMeta}>Conectado</span>
+        </div>
       </button>
+
+      {isOpen ? (
+        <div className={styles.menu} role="menu">
+          <Link
+            href="/travel-package"
+            className={styles.menuItem}
+            onClick={() => setIsOpen(false)}
+          >
+            Pacotes de viagem
+          </Link>
+          <Link
+            href="/travel-package/new"
+            className={styles.menuItem}
+            onClick={() => setIsOpen(false)}
+          >
+            Novo pacote
+          </Link>
+          <Link
+            href="/complete-profile?mode=edit"
+            className={styles.menuItem}
+            onClick={() => setIsOpen(false)}
+          >
+            Editar perfil
+          </Link>
+          <button
+            type="button"
+            className={styles.menuButton}
+            onClick={() => signOut({ callbackUrl: "/" })}
+          >
+            Sair
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

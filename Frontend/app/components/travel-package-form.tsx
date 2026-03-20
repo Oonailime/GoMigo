@@ -3,6 +3,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { DateRangeField } from "./date-range-field";
 import styles from "./travel-package-form.module.css";
 
 const backendUrl =
@@ -18,6 +19,18 @@ type TravelPackageFormState = {
   seats: string;
   price: string;
   notes: string;
+};
+
+type EditablePackage = {
+  titulo: string;
+  descricao?: string | null;
+  vagas: number;
+  valorPorPessoaPrevisto?: number | null;
+  regrasViagem: string;
+  dataInicio?: string | null;
+  dataFim?: string | null;
+  enderecoPartida?: { cidade: string; estado: string } | null;
+  enderecoDestino?: { cidade: string; estado: string } | null;
 };
 
 const initialState: TravelPackageFormState = {
@@ -45,10 +58,18 @@ const createAddressPayload = (value: string) => {
   };
 };
 
-export function TravelPackageForm() {
+export function TravelPackageForm({
+  editPackageId,
+  initialPackage,
+}: {
+  editPackageId?: string | null;
+  initialPackage?: EditablePackage | null;
+}) {
   const router = useRouter();
   const { data: session } = useSession();
-  const [formState, setFormState] = useState<TravelPackageFormState>(initialState);
+  const [formState, setFormState] = useState<TravelPackageFormState>(() =>
+    mapPackageToFormState(initialPackage),
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -58,6 +79,14 @@ export function TravelPackageForm() {
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setFormState((current) => ({ ...current, [field]: event.target.value }));
     };
+
+  const handleTravelStartDateChange = (value: string) => {
+    setFormState((current) => ({
+      ...current,
+      startDate: value,
+      endDate: current.endDate && value && current.endDate < value ? "" : current.endDate,
+    }));
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -93,27 +122,32 @@ export function TravelPackageForm() {
       const originAddress = (await originResponse.json()) as { id: number };
       const destinationAddress = (await destinationResponse.json()) as { id: number };
 
-      const packageResponse = await fetch(`${backendUrl}/pacotes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.backendAccessToken}`,
+      const payload = {
+        idEnderecoPartida: originAddress.id,
+        idEnderecoDestino: destinationAddress.id,
+        titulo: formState.title.trim(),
+        descricao: formState.summary.trim() || undefined,
+        tipoPacoteViagem: "COMPARTILHADO",
+        status: "ATIVO",
+        vagas: Number(formState.seats),
+        regrasViagem: formState.notes.trim() || "Regras a combinar com o grupo.",
+        valorPorPessoaPrevisto: formState.price ? Math.round(Number(formState.price)) : undefined,
+        dataInicio: formState.startDate || undefined,
+        dataFim: formState.endDate || undefined,
+        privacidade: "PUBLICO",
+      };
+
+      const packageResponse = await fetch(
+        `${backendUrl}/pacotes${editPackageId ? `/${editPackageId}` : ""}`,
+        {
+          method: editPackageId ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.backendAccessToken}`,
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify({
-          idEnderecoPartida: originAddress.id,
-          idEnderecoDestino: destinationAddress.id,
-          titulo: formState.title.trim(),
-          descricao: formState.summary.trim() || undefined,
-          tipoPacoteViagem: "COMPARTILHADO",
-          status: "ATIVO",
-          vagas: Number(formState.seats),
-          regrasViagem: formState.notes.trim() || "Regras a combinar com o grupo.",
-          valorPorPessoaPrevisto: formState.price ? Math.round(Number(formState.price)) : undefined,
-          dataInicio: formState.startDate || undefined,
-          dataFim: formState.endDate || undefined,
-          privacidade: "PUBLICO",
-        }),
-      });
+      );
 
       if (!packageResponse.ok) {
         const data = (await packageResponse.json().catch(() => null)) as
@@ -128,7 +162,12 @@ export function TravelPackageForm() {
       }
 
       setFormState(initialState);
-      setSuccessMessage("Pacote publicado com sucesso.");
+      setSuccessMessage(
+        editPackageId
+          ? "Pacote atualizado com sucesso. Redirecionando..."
+          : "Pacote publicado com sucesso. Redirecionando...",
+      );
+      router.push("/travel-package");
       router.refresh();
     } catch {
       setError("Falha de conexao com o backend.");
@@ -188,28 +227,6 @@ export function TravelPackageForm() {
         </label>
 
         <label className={styles.field}>
-          <span className={styles.label}>Ida</span>
-          <input
-            className={styles.input}
-            type="date"
-            value={formState.startDate}
-            onChange={updateField("startDate")}
-            required
-          />
-        </label>
-
-        <label className={styles.field}>
-          <span className={styles.label}>Volta</span>
-          <input
-            className={styles.input}
-            type="date"
-            value={formState.endDate}
-            onChange={updateField("endDate")}
-            required
-          />
-        </label>
-
-        <label className={styles.field}>
           <span className={styles.label}>Vagas</span>
           <input
             className={styles.input}
@@ -237,6 +254,15 @@ export function TravelPackageForm() {
         </label>
       </div>
 
+      <DateRangeField
+        startDate={formState.startDate}
+        endDate={formState.endDate}
+        onStartDateChange={handleTravelStartDateChange}
+        onEndDateChange={(value) =>
+          setFormState((current) => ({ ...current, endDate: value }))
+        }
+      />
+
       <label className={styles.field}>
         <span className={styles.label}>Observacoes</span>
         <textarea
@@ -260,10 +286,42 @@ export function TravelPackageForm() {
         >
           Salvar rascunho
         </button>
-        <button type="submit" className={styles.primaryButton} disabled={isSubmitting}>
-          {isSubmitting ? "Publicando..." : "Publicar pacote"}
+        <button
+          type="submit"
+          className={styles.primaryButton}
+          disabled={isSubmitting}
+        >
+          {isSubmitting
+            ? editPackageId
+              ? "Salvando..."
+              : "Publicando..."
+            : editPackageId
+              ? "Salvar alteracoes"
+              : "Publicar pacote"}
         </button>
       </div>
     </form>
   );
+}
+
+function mapPackageToFormState(pkg?: EditablePackage | null): TravelPackageFormState {
+  if (!pkg) {
+    return initialState;
+  }
+
+  return {
+    title: pkg.titulo ?? "",
+    summary: pkg.descricao ?? "",
+    origin: pkg.enderecoPartida
+      ? `${pkg.enderecoPartida.cidade} - ${pkg.enderecoPartida.estado}`
+      : "",
+    destination: pkg.enderecoDestino
+      ? `${pkg.enderecoDestino.cidade} - ${pkg.enderecoDestino.estado}`
+      : "",
+    startDate: pkg.dataInicio?.slice(0, 10) ?? "",
+    endDate: pkg.dataFim?.slice(0, 10) ?? "",
+    seats: pkg.vagas ? String(pkg.vagas) : "",
+    price: pkg.valorPorPessoaPrevisto ? String(pkg.valorPorPessoaPrevisto) : "",
+    notes: pkg.regrasViagem ?? "",
+  };
 }

@@ -1,0 +1,199 @@
+.list {
+  display: grid;
+  gap: 20px;
+}
+
+.card,
+.emptyState,
+.state {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  background: rgba(8, 16, 24, 0.84);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+}
+
+.card {
+  padding: 24px;
+  display: grid;
+  gap: 20px;
+}
+
+.emptyState,
+.state {
+  padding: 32px;
+}
+
+.emptyTitle,
+.cardTitle,
+.sectionTitle {
+  margin: 0;
+  color: #f4f7fb;
+}
+
+.emptyText,
+.description,
+.sectionEmpty,
+.message,
+.rejectionReason,
+.cardMeta,
+.applicantMeta {
+  margin: 0;
+  color: rgba(216, 227, 238, 0.76);
+  line-height: 1.6;
+}
+
+.primaryLink {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 16px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #f1ad49;
+  color: #081018;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.packageActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.editLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f7fb;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.cardHeader,
+.sectionHeader,
+.solicitation {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.metrics,
+.solicitationActions,
+.actionRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.metrics {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.metric,
+.counter,
+.statusBadge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.metric,
+.counter,
+.pending {
+  background: rgba(255, 255, 255, 0.08);
+  color: #dfe8f1;
+}
+
+.accepted {
+  background: rgba(62, 193, 123, 0.16);
+  color: #8be0ae;
+}
+
+.rejected {
+  background: rgba(255, 110, 110, 0.14);
+  color: #ffb4ab;
+}
+
+.section {
+  display: grid;
+  gap: 16px;
+}
+
+.solicitations {
+  display: grid;
+  gap: 14px;
+}
+
+.solicitation {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.solicitationInfo {
+  display: grid;
+  gap: 6px;
+}
+
+.applicantName {
+  color: #f4f7fb;
+}
+
+.actionRow {
+  align-items: center;
+}
+
+.approveButton,
+.rejectButton {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.approveButton {
+  background: #4ec7b0;
+  color: #081018;
+}
+
+.rejectButton {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f7fb;
+}
+
+.approveButton:disabled,
+.rejectButton:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.error {
+  margin: 0;
+  color: #ffb4ab;
+}
+
+.arrow {
+  color: rgba(241, 173, 73, 0.8);
+}
+
+@media (max-width: 860px) {
+  .cardHeader,
+  .sectionHeader,
+  .solicitation {
+    flex-direction: column;
+  }
+
+  .metrics {
+    justify-content: flex-start;
+  }
+
+  .solicitationActions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

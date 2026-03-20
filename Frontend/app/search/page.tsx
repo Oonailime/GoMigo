@@ -2,152 +2,214 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import styles from "./search.module.css";
-import { CityAutocomplete } from "../components/city-autocomplete";
-import { TripModeSelect } from "../components/trip-mode-select";
-import { ThemeToggle } from "../components/theme-toggle";
-import { UserMenu } from "../components/user-menu";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
+import { BRAZILIAN_TRIP_MODES } from "../data/trip-modes";
+import {
+  defaultSearchDraft,
+  readSearchDraft,
+  writeSearchDraft,
+  type SearchDraft,
+} from "../data/search-storage";
+import { CityAutocomplete } from "../components/city-autocomplete";
+import { ThemeToggle } from "../components/theme-toggle";
+import { TripModeSelect } from "../components/trip-mode-select";
+import { UserMenu } from "../components/user-menu";
+import styles from "./search.module.css";
 
 const DateRangeField = dynamic(
   () => import("../components/date-range-field").then((mod) => mod.DateRangeField),
   { ssr: false },
 );
 
+const PAGE_SIZE = 12;
+const SEARCH_MODE_OPTIONS = [
+  { value: "TODOS", label: "Todos os formatos" },
+  ...BRAZILIAN_TRIP_MODES,
+];
+
 type ThemeMode = "dark" | "light";
 
-type TripModeValue =
-  | "ROTEIRO_COMPLETO"
-  | "COMPARTILHADO"
-  | "BATE_VOLTA"
-  | "APENAS_CARONA"
-  | "APENAS_HOSPEDAGEM"
-  | "APENAS_GUIA_TURISTICO";
+type SearchResponse = {
+  modo: "EXATO" | "INTERSECCAO" | "SEM_RESULTADOS";
+  mensagem?: string;
+  pacotes: PackageCard[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+};
 
-type SearchMode = "EXATO" | "INTERSECCAO" | "SEM_RESULTADOS";
-
-type Pacote = {
+type PackageCard = {
   id: number;
   titulo: string;
   descricao?: string | null;
-  tipoPacoteViagem: TripModeValue;
-  status: string;
   vagas: number;
   valorPorPessoaPrevisto?: number | null;
-  dataInicio: string | null;
-  dataFim: string | null;
-  enderecoPartida?: { cidade: string; estado: string } | null;
-  enderecoDestino?: { cidade: string; estado: string } | null;
-};
-
-const TRIP_MODE_OPTIONS = [
-  { value: "ROTEIRO_COMPLETO", label: "Roteiro completo" },
-  { value: "COMPARTILHADO", label: "Compartilhado" },
-  { value: "BATE_VOLTA", label: "Bate-volta" },
-  { value: "APENAS_CARONA", label: "Apenas carona" },
-  { value: "APENAS_HOSPEDAGEM", label: "Apenas hospedagem" },
-  { value: "APENAS_GUIA_TURISTICO", label: "Apenas guia turistico" },
-] as const;
-
-const FILTER_TABS = [
-  { value: "ALL", label: "Tudo" },
-  { value: "ROTEIRO_COMPLETO", label: "Roteiro completo" },
-  { value: "BATE_VOLTA", label: "Bate-volta" },
-  { value: "APENAS_CARONA", label: "Apenas carona" },
-  { value: "APENAS_HOSPEDAGEM", label: "Apenas hospedagem" },
-] as const;
-
-type FilterTab = (typeof FILTER_TABS)[number]["value"];
-
-const ALL_TYPES: TripModeValue[] = [
-  "ROTEIRO_COMPLETO",
-  "COMPARTILHADO",
-  "BATE_VOLTA",
-  "APENAS_CARONA",
-  "APENAS_HOSPEDAGEM",
-  "APENAS_GUIA_TURISTICO",
-];
-
-const TYPE_LABELS: Record<TripModeValue, string> = {
-  ROTEIRO_COMPLETO: "Roteiro completo",
-  COMPARTILHADO: "Compartilhado",
-  BATE_VOLTA: "Bate-volta",
-  APENAS_CARONA: "Apenas carona",
-  APENAS_HOSPEDAGEM: "Apenas hospedagem",
-  APENAS_GUIA_TURISTICO: "Apenas guia turistico",
-};
-
-const MODE_LABELS: Record<SearchMode, string> = {
-  EXATO: "Resultados no periodo exato",
-  INTERSECCAO: "Datas proximas do periodo selecionado",
-  SEM_RESULTADOS: "Sem resultados",
-};
-
-const normalizeCity = (value: string) => {
-  const raw = value.split(" - ")[0]?.trim() ?? "";
-  return raw.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+  dataInicio?: string | null;
+  dataFim?: string | null;
+  enderecoPartida: {
+    cidade: string;
+    estado: string;
+  };
+  enderecoDestino: {
+    cidade: string;
+    estado: string;
+  };
 };
 
 export default function SearchPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
   const [originCity, setOriginCity] = useState("");
   const [destinationCity, setDestinationCity] = useState("");
-  const [tripMode, setTripMode] = useState<TripModeValue>("ROTEIRO_COMPLETO");
+  const [tripMode, setTripMode] = useState("TODOS");
   const [travelStartDate, setTravelStartDate] = useState("");
   const [travelEndDate, setTravelEndDate] = useState("");
-  const [activeTab, setActiveTab] = useState<FilterTab>("ALL");
-  const [results, setResults] = useState<Pacote[]>([]);
-  const [searchMode, setSearchMode] = useState<SearchMode | null>(null);
+  const [submittedFilters, setSubmittedFilters] =
+    useState<SearchDraft>(defaultSearchDraft);
+  const [results, setResults] = useState<PackageCard[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [searchMode, setSearchMode] = useState<SearchResponse["modo"]>("EXATO");
+  const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [didAutoSearch, setDidAutoSearch] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
   }, [themeMode]);
 
   useEffect(() => {
-    if (!searchParams) return;
+    const draft = readSearchDraft();
+    const urlDraft: SearchDraft = {
+      cidadePartida: searchParams.get("cidadePartida") ?? defaultSearchDraft.cidadePartida,
+      cidadeDestino: searchParams.get("cidadeDestino") ?? defaultSearchDraft.cidadeDestino,
+      tipo: searchParams.get("tipo") ?? "TODOS",
+      dataInicio: searchParams.get("dataInicio") ?? defaultSearchDraft.dataInicio,
+      dataFim: searchParams.get("dataFim") ?? defaultSearchDraft.dataFim,
+    };
 
-    const cidadePartida = searchParams.get("cidadePartida") ?? "";
-    const cidadeDestino = searchParams.get("cidadeDestino") ?? "";
-    const tipo = searchParams.get("tipo") as TripModeValue | null;
-    const dataInicio = searchParams.get("dataInicio") ?? "";
-    const dataFim = searchParams.get("dataFim") ?? "";
+    const source = draft ?? urlDraft;
+    const pageFromUrl = Number(searchParams.get("page") ?? "1");
 
-    if (cidadePartida) setOriginCity(cidadePartida);
-    if (cidadeDestino) setDestinationCity(cidadeDestino);
-    if (tipo && ALL_TYPES.includes(tipo)) {
-      setTripMode(tipo);
-      setActiveTab(
-        tipo === "ROTEIRO_COMPLETO" ||
-          tipo === "BATE_VOLTA" ||
-          tipo === "APENAS_CARONA" ||
-          tipo === "APENAS_HOSPEDAGEM"
-          ? (tipo as FilterTab)
-          : "ALL",
-      );
-    }
-    if (dataInicio) setTravelStartDate(dataInicio);
-    if (dataFim) setTravelEndDate(dataFim);
+    setOriginCity(source.cidadePartida);
+    setDestinationCity(source.cidadeDestino);
+    setTripMode(source.tipo || "TODOS");
+    setTravelStartDate(source.dataInicio);
+    setTravelEndDate(source.dataFim);
+    setSubmittedFilters({
+      cidadePartida: source.cidadePartida,
+      cidadeDestino: source.cidadeDestino,
+      tipo: source.tipo || "TODOS",
+      dataInicio: source.dataInicio,
+      dataFim: source.dataFim,
+    });
+    setCurrentPage(Number.isFinite(pageFromUrl) && pageFromUrl > 0 ? pageFromUrl : 1);
+    setIsInitialized(true);
   }, [searchParams]);
 
-  useEffect(() => {
-    if (didAutoSearch) return;
-    if (originCity && destinationCity && travelStartDate && travelEndDate) {
-      setDidAutoSearch(true);
-      void handleSearch();
-    }
-  }, [originCity, destinationCity, travelStartDate, travelEndDate, didAutoSearch]);
+  const activeFilters = useMemo(
+    () => ({
+      cidadePartida: originCity,
+      cidadeDestino: destinationCity,
+      tipo: tripMode,
+      dataInicio: travelStartDate,
+      dataFim: travelEndDate,
+    }),
+    [destinationCity, originCity, travelEndDate, travelStartDate, tripMode],
+  );
 
   useEffect(() => {
-    if (activeTab !== "ALL") {
-      setTripMode(activeTab as TripModeValue);
+    if (!isInitialized) {
+      return;
     }
-  }, [activeTab]);
+
+    const controller = new AbortController();
+
+    const fetchPackages = async () => {
+      setStatus("loading");
+      setError(null);
+
+      try {
+        const params = new URLSearchParams();
+
+        if (submittedFilters.cidadePartida) {
+          params.set(
+            "cidadePartida",
+            normalizeCityForBackend(submittedFilters.cidadePartida),
+          );
+        }
+
+        if (submittedFilters.cidadeDestino) {
+          params.set(
+            "cidadeDestino",
+            normalizeCityForBackend(submittedFilters.cidadeDestino),
+          );
+        }
+
+        if (submittedFilters.tipo && submittedFilters.tipo !== "TODOS") {
+          params.set("tipo", submittedFilters.tipo);
+        }
+
+        if (submittedFilters.dataInicio) {
+          params.set("dataInicio", submittedFilters.dataInicio);
+        }
+
+        if (submittedFilters.dataFim) {
+          params.set("dataFim", submittedFilters.dataFim);
+        }
+
+        params.set("page", String(currentPage));
+        params.set("pageSize", String(PAGE_SIZE));
+
+        const response = await fetch(`/api/pacotes/search?${params.toString()}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const data = (await response.json().catch(() => null)) as
+            | { message?: string | string[] }
+            | null;
+          const responseMessage = Array.isArray(data?.message)
+            ? data.message.join(", ")
+            : data?.message;
+
+          setStatus("error");
+          setError(responseMessage ?? "Nao foi possivel carregar os pacotes.");
+          return;
+        }
+
+        const data = (await response.json()) as SearchResponse;
+
+        setResults(data.pacotes);
+        setSearchMode(data.modo);
+        setMessage(data.mensagem ?? null);
+        setTotalPages(data.pagination.totalPages);
+        setTotalResults(data.pagination.total);
+        setStatus("ready");
+      } catch (fetchError) {
+        if (fetchError instanceof Error && fetchError.name === "AbortError") {
+          return;
+        }
+
+        setStatus("error");
+        setError("Falha de conexao ao buscar pacotes.");
+      }
+    };
+
+    writeSearchDraft(submittedFilters);
+    void fetchPackages();
+
+    return () => controller.abort();
+  }, [currentPage, isInitialized, submittedFilters]);
 
   const handleTravelStartDateChange = (value: string) => {
     setTravelStartDate(value);
@@ -157,83 +219,46 @@ export default function SearchPage() {
     }
   };
 
-  const canSearch = useMemo(() => {
-    return originCity && destinationCity && travelStartDate && travelEndDate;
-  }, [originCity, destinationCity, travelStartDate, travelEndDate]);
+  const syncUrl = (filters: SearchDraft, page: number) => {
+    const params = new URLSearchParams();
 
-  const formatDate = (value?: string | null) => {
-    if (!value) return "";
-    const date = new Date(value);
-    return date.toLocaleDateString("pt-BR");
-  };
-
-  const buildQuery = (tipo: TripModeValue) => {
-    const params = new URLSearchParams({
-      cidadePartida: normalizeCity(originCity),
-      cidadeDestino: normalizeCity(destinationCity),
-      tipo,
-      dataInicio: travelStartDate,
-      dataFim: travelEndDate,
-    });
-    return params.toString();
-  };
-
-  const mergeById = (items: Pacote[]) => {
-    const map = new Map<number, Pacote>();
-    items.forEach((item) => map.set(item.id, item));
-    return Array.from(map.values());
-  };
-
-  const handleSearch = async () => {
-    if (!canSearch) {
-      setError("Preencha cidade de partida, destino e periodo.");
-      return;
+    if (filters.cidadePartida) {
+      params.set("cidadePartida", filters.cidadePartida);
     }
 
-    setError(null);
-    setIsLoading(true);
-    setResults([]);
-    setMessage(null);
-    setSearchMode(null);
-
-    const typesToSearch = activeTab === "ALL" ? ALL_TYPES : [activeTab as TripModeValue];
-    const collected: Pacote[] = [];
-    let finalMode: SearchMode | null = null;
-    let fallbackMessage: string | null = null;
-
-    try {
-      for (const tipo of typesToSearch) {
-        const response = await fetch(`/api/pacotes/search?${buildQuery(tipo)}`);
-        if (!response.ok) {
-          throw new Error("Falha ao buscar pacotes.");
-        }
-        const payload = await response.json();
-        const modo = payload?.modo as SearchMode | undefined;
-        if (modo && modo !== "SEM_RESULTADOS") {
-          finalMode = finalMode === "EXATO" ? "EXATO" : modo;
-        }
-        if (payload?.mensagem && !fallbackMessage) {
-          fallbackMessage = payload.mensagem;
-        }
-        if (Array.isArray(payload?.pacotes)) {
-          collected.push(...payload.pacotes);
-        }
-      }
-
-      const unique = mergeById(collected);
-      if (unique.length === 0) {
-        setSearchMode("SEM_RESULTADOS");
-        setMessage("Nao ha pacotes disponiveis para este filtro. Considere criar um novo pacote.");
-      } else {
-        setSearchMode(finalMode ?? "INTERSECCAO");
-        setMessage(fallbackMessage);
-      }
-      setResults(unique);
-    } catch (err) {
-      setError("Nao foi possivel carregar os pacotes agora.");
-    } finally {
-      setIsLoading(false);
+    if (filters.cidadeDestino) {
+      params.set("cidadeDestino", filters.cidadeDestino);
     }
+
+    if (filters.tipo && filters.tipo !== "TODOS") {
+      params.set("tipo", filters.tipo);
+    }
+
+    if (filters.dataInicio) {
+      params.set("dataInicio", filters.dataInicio);
+    }
+
+    if (filters.dataFim) {
+      params.set("dataFim", filters.dataFim);
+    }
+
+    if (page > 1) {
+      params.set("page", String(page));
+    }
+
+    router.replace(params.size > 0 ? `${pathname}?${params.toString()}` : pathname);
+  };
+
+  const handleSearch = () => {
+    writeSearchDraft(activeFilters);
+    setSubmittedFilters(activeFilters);
+    setCurrentPage(1);
+    syncUrl(activeFilters, 1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    syncUrl(submittedFilters, page);
   };
 
   return (
@@ -241,14 +266,14 @@ export default function SearchPage() {
       <header className={styles.appBar}>
         <div className={styles.brandArea}>
           <span className={styles.brandBadge}>GoMigo</span>
-          <p className={styles.brandSubtitle}>Busca de pacotes</p>
+          <p className={styles.brandSubtitle}>Busca de pacotes publicados</p>
         </div>
 
         <div className={styles.appActions}>
-          <ThemeToggle currentTheme={themeMode} onThemeChange={setThemeMode} />
-          <Link href="/travel-package/new" className={styles.primaryButton}>
-            Oferecer pacote de viagem
+          <Link href="/" className={styles.secondaryButton}>
+            Voltar ao inicio
           </Link>
+          <ThemeToggle currentTheme={themeMode} onThemeChange={setThemeMode} />
           <UserMenu />
         </div>
       </header>
@@ -256,8 +281,8 @@ export default function SearchPage() {
       <section className={`${styles.surface} ${styles.filterSurface}`}>
         <div className={styles.filterHeader}>
           <div>
-            <p className={styles.eyebrow}>Filtro principal</p>
-            <h1 className={styles.title}>Encontre sua proxima viagem</h1>
+            <p className={styles.eyebrow}>Filtros</p>
+            <h1 className={styles.title}>Encontre pacotes publicados</h1>
           </div>
         </div>
 
@@ -266,22 +291,22 @@ export default function SearchPage() {
             label="Cidade de partida"
             value={originCity}
             onChange={setOriginCity}
-            placeholder="Ex.: Sao Paulo"
-            helperText="Ponto inicial da viagem."
+            placeholder="Ex.: Sao Paulo - SP"
+            helperText="Mantemos o valor digitado ou o ultimo pesquisado."
           />
 
           <CityAutocomplete
             label="Destino principal"
             value={destinationCity}
             onChange={setDestinationCity}
-            placeholder="Ex.: Rio de Janeiro"
-            helperText="Busque municipios do Brasil."
+            placeholder="Ex.: Rio de Janeiro - RJ"
+            helperText="O backend recebe a versao tratada, a tela preserva o texto original."
           />
 
           <TripModeSelect
-            options={TRIP_MODE_OPTIONS}
+            options={SEARCH_MODE_OPTIONS}
             value={tripMode}
-            onChange={(value) => setTripMode(value as TripModeValue)}
+            onChange={setTripMode}
           />
 
           <DateRangeField
@@ -293,86 +318,146 @@ export default function SearchPage() {
         </div>
 
         <div className={styles.filterActions}>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={handleSearch}
-            disabled={isLoading}
-          >
-            {isLoading ? "Buscando..." : "Buscar pacotes"}
+          <button type="button" className={styles.primaryButton} onClick={handleSearch}>
+            Buscar pacotes
           </button>
         </div>
+
+        {!travelStartDate && !travelEndDate ? (
+          <p className={styles.helperError}>
+            Sem datas selecionadas, mostramos todos os pacotes publicados com paginacao.
+          </p>
+        ) : null}
 
         {error ? <p className={styles.helperError}>{error}</p> : null}
       </section>
 
       <section className={`${styles.surface} ${styles.resultsSurface}`}>
-        <div className={styles.tabRow}>
-          {FILTER_TABS.map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              className={`${styles.tabButton} ${
-                activeTab === tab.value ? styles.tabButtonActive : ""
-              }`}
-              onClick={() => setActiveTab(tab.value)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
         <div className={styles.resultsHeader}>
           <div>
-            <h2 className={styles.sectionTitle}>Pacotes encontrados</h2>
+            <h2 className={styles.sectionTitle}>Resultados</h2>
             <p className={styles.sectionSubtitle}>
-              {searchMode
-                ? MODE_LABELS[searchMode]
-                : "Aplique o filtro para ver resultados."}
+              {message ??
+                (status === "ready"
+                  ? `${totalResults} pacote(s) encontrado(s) para os filtros atuais.`
+                  : "Ajuste os filtros e acompanhe os pacotes publicados.")}
             </p>
           </div>
-          {message ? <span className={styles.infoBadge}>{message}</span> : null}
+
+          <span className={styles.infoBadge}>
+            {searchMode === "INTERSECCAO"
+              ? "Datas proximas"
+              : searchMode === "SEM_RESULTADOS"
+                ? "Sem resultados"
+                : `${totalResults} resultados`}
+          </span>
         </div>
 
-        <div className={styles.resultsGrid}>
-          {results.length === 0 ? (
-            <div className={styles.emptyState}>
-              <p>Nenhum pacote para mostrar.</p>
-              <span>Use os filtros acima para iniciar a busca.</span>
-            </div>
-          ) : (
-            results.map((pacote) => (
-              <article key={pacote.id} className={styles.card}>
+        {status === "loading" ? (
+          <div className={styles.emptyState}>Carregando pacotes publicados...</div>
+        ) : null}
+
+        {status === "ready" && results.length === 0 ? (
+          <div className={styles.emptyState}>
+            Nenhum pacote publicado combina com os filtros atuais.
+          </div>
+        ) : null}
+
+        {results.length > 0 ? (
+          <div className={styles.resultsGrid}>
+            {results.map((item) => (
+              <article key={item.id} className={styles.card}>
                 <div className={styles.cardHeader}>
                   <div>
-                    <h3 className={styles.cardTitle}>{pacote.titulo}</h3>
-                    <span className={styles.cardMeta}>
-                      {TYPE_LABELS[pacote.tipoPacoteViagem]}
-                    </span>
+                    <h3 className={styles.cardTitle}>{item.titulo}</h3>
+                    <div className={styles.cardMeta}>
+                      {item.enderecoPartida.cidade} - {item.enderecoPartida.estado}
+                    </div>
                   </div>
-                  <span className={styles.statusBadge}>{pacote.status}</span>
+                  <span className={styles.statusBadge}>Publicado</span>
                 </div>
+
                 <p className={styles.cardRoute}>
-                  {pacote.enderecoPartida?.cidade ?? "Cidade de partida"} ?{" "}
-                  {pacote.enderecoDestino?.cidade ?? "Destino"}
+                  {item.enderecoPartida.cidade} - {item.enderecoPartida.estado} /{" "}
+                  {item.enderecoDestino.cidade} - {item.enderecoDestino.estado}
                 </p>
+
                 <div className={styles.cardDetails}>
-                  <span>
-                    {formatDate(pacote.dataInicio)} - {formatDate(pacote.dataFim)}
-                  </span>
-                  <span>{pacote.vagas} vagas</span>
-                  {pacote.valorPorPessoaPrevisto ? (
-                    <span>R$ {pacote.valorPorPessoaPrevisto}</span>
-                  ) : null}
+                  <span>{item.vagas} vagas</span>
+                  <span>{formatDateRange(item.dataInicio, item.dataFim)}</span>
+                  <span>{formatPrice(item.valorPorPessoaPrevisto)}</span>
                 </div>
-                {pacote.descricao ? (
-                  <p className={styles.cardDescription}>{pacote.descricao}</p>
+
+                {item.descricao ? (
+                  <p className={styles.cardDescription}>{item.descricao}</p>
                 ) : null}
               </article>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        ) : null}
+
+        {status === "ready" && totalPages > 1 ? (
+          <div className={styles.pagination}>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </button>
+            <span className={styles.pageIndicator}>
+              Pagina {currentPage} de {totalPages}
+            </span>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+            >
+              Proxima
+            </button>
+          </div>
+        ) : null}
       </section>
     </main>
   );
+}
+
+function normalizeCityForBackend(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatDateRange(startDate?: string | null, endDate?: string | null) {
+  if (!startDate || !endDate) {
+    return "Datas a combinar";
+  }
+
+  return `${formatDate(startDate)} ate ${formatDate(endDate)}`;
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("pt-BR").format(date);
+}
+
+function formatPrice(value?: number | null) {
+  if (typeof value !== "number") {
+    return "Preco sob consulta";
+  }
+
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  }).format(value);
 }

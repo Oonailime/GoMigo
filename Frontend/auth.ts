@@ -20,24 +20,16 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async jwt({ token, account, trigger, session }) {
-      if (trigger) {
-        console.log("[auth][jwt] trigger:", trigger);
-      }
-
       if (account?.id_token) {
-        console.log("[auth][jwt] received Google id_token");
         token.googleIdToken = account.id_token;
 
         try {
-          console.log("[auth][jwt] sending id_token to backend:", backendUrl);
           const response = await fetch(`${backendUrl}/auth/google`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ idToken: account.id_token }),
             cache: "no-store",
           });
-
-          console.log("[auth][jwt] backend response status:", response.status);
 
           if (response.ok) {
             const data = (await response.json()) as {
@@ -47,22 +39,19 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
             token.backendAccessToken = data.accessToken;
             token.backendUserStatus = data.userStatus;
-            console.log("[auth][jwt] backend auth success:", {
-              userStatus: data.userStatus,
-              hasAccessToken: Boolean(data.accessToken),
-            });
           } else {
             token.backendUserStatus = "INCOMPLETE";
-            const errorText = await response.text().catch(() => "");
-            console.log("[auth][jwt] backend auth failed body:", errorText);
           }
-        } catch (error) {
+        } catch {
           token.backendUserStatus = "INCOMPLETE";
-          console.log("[auth][jwt] backend auth exception:", error);
         }
       }
 
       if (trigger === "update") {
+        if (session.user?.name) {
+          token.name = session.user.name;
+        }
+
         if (session.backendAccessToken) {
           token.backendAccessToken = session.backendAccessToken;
         }
@@ -70,23 +59,17 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (session.backendUserStatus) {
           token.backendUserStatus = session.backendUserStatus;
         }
-
-        console.log("[auth][jwt] session update applied:", {
-          backendUserStatus: token.backendUserStatus,
-          hasAccessToken: Boolean(token.backendAccessToken),
-        });
       }
 
       return token;
     },
     async session({ session, token }) {
+      if (session.user && typeof token.name === "string") {
+        session.user.name = token.name;
+      }
+
       session.backendAccessToken = token.backendAccessToken;
       session.backendUserStatus = token.backendUserStatus;
-      console.log("[auth][session]", {
-        backendUserStatus: session.backendUserStatus,
-        hasAccessToken: Boolean(session.backendAccessToken),
-        email: session.user?.email ?? null,
-      });
       return session;
     },
   },

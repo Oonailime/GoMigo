@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../page.module.css";
+import {
+  defaultSearchDraft,
+  writeSearchDraft,
+} from "../data/search-storage";
 import { BRAZILIAN_TRIP_MODES } from "../data/trip-modes";
 import { CityAutocomplete } from "./city-autocomplete";
 import { SocialLoginButtons } from "./social-login-buttons";
@@ -46,11 +50,6 @@ const DateRangeField = dynamic(
 
 type ThemeMode = "dark" | "light";
 
-const normalizeCity = (value: string) => {
-  const raw = value.split(" - ")[0]?.trim() ?? "";
-  return raw.normalize("NFD").replace(/\p{Diacritic}/gu, "");
-};
-
 export function TravelPlannerForm() {
   const router = useRouter();
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
@@ -73,13 +72,27 @@ export function TravelPlannerForm() {
   };
 
   const handleSearch = () => {
-    const params = new URLSearchParams({
-      cidadePartida: normalizeCity(originCity),
-      cidadeDestino: normalizeCity(destinationCity),
+    writeSearchDraft({
+      cidadePartida: originCity,
+      cidadeDestino: destinationCity,
       tipo: tripMode,
       dataInicio: travelStartDate,
       dataFim: travelEndDate,
     });
+
+    const params = new URLSearchParams({
+      cidadePartida: originCity || defaultSearchDraft.cidadePartida,
+      cidadeDestino: destinationCity || defaultSearchDraft.cidadeDestino,
+      tipo: tripMode,
+    });
+
+    if (travelStartDate) {
+      params.set("dataInicio", travelStartDate);
+    }
+
+    if (travelEndDate) {
+      params.set("dataFim", travelEndDate);
+    }
 
     router.push(`/search?${params.toString()}`);
   };
