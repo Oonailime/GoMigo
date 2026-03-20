@@ -1,27 +1,40 @@
 # GoMigo
 
-GoMigo e um SaaS para conectar viajantes e facilitar a organizacao de viagens em grupo. A proposta inicial e unir viajantes do Brasil para reduzir os gastos de deslocamento, hospedagem e passeios, com potencial de expansao futura para o mercado global.
+GoMigo e um SaaS de organizacao de viagens em grupo. A ideia central e unir pessoas com interesses e destinos em comum para dividir custos e reduzir a friccao do planejamento, partindo do Brasil e com espaco para expansao futura.
 
-A plataforma parte da logica de viagens compartilhadas: reunir pessoas com interesses e destinos em comum para dividir custos, melhorar o planejamento e reduzir a friccao na montagem da viagem. Alem disso, GoMigo tambem pode ser usado gratuitamente como ferramenta de organizacao de viagens em grupo, mesmo quando nao houver compartilhamento comercial de pacotes.
+## Ideia do app
 
-## Proposta do produto
+Um marketplace + painel de organizacao onde:
 
-O foco do GoMigo e ajudar pessoas a:
+- organizadores publicam pacotes de viagem (rota, datas, vagas, regras e custos estimados);
+- viajantes buscam pacotes, enviam solicitacoes e entram no grupo aprovado;
+- a viagem vira um hub com caronas, hospedagens, roteiros e combinacoes do grupo;
+- o fluxo cobre desde viagens completas ate formatos menores (apenas carona ou apenas hospedagem).
 
-- encontrar outras pessoas para viajar juntas e gastar menos
-- organizar rotas, hospedagem, passeios e combinacoes do grupo em um so lugar
-- divulgar pacotes de viagem dentro da plataforma
-- estruturar viagens coletivas de forma simples, inclusive de maneira gratuita
+## Como o produto se diferencia
 
-## Modelo inicial
+- Agrupa tudo em um unico fluxo: rota, hospedagem, passeios e acordos do grupo.
+- Usa a logica de viagens compartilhadas para reduzir custo por pessoa.
+- Permite publicar pacotes gratuitos para gerar tracao e comunidades locais.
 
-Nos primeiros estagios, a intencao e que a plataforma cresca com a criacao e divulgacao de pacotes de viagens gratuitas dentro do proprio SaaS. Essa dinamica ajuda a formar base de usuarios, gerar tracao e incentivar a criacao de grupos e roteiros compartilhados.
+## O que ja esta modelado/implementado no repo
 
-Com a evolucao do produto, a plataforma pode ampliar esse ecossistema e conectar mais viajantes, parceiros e experiencias, primeiro no Brasil e depois em outros mercados.
+Backend (NestJS + Prisma + Postgres):
 
+- Modulos ativos: usuarios, auth, enderecos, veiculos, pacotes, caronas, hospedagens,
+  anuncios, solicitacoes de participacao e avaliacoes.
+- Modelo de dados amplo para evoluir: roteiros/atividades, checklists, anexos,
+  convites, pagamentos/ rateios, mensagens, cobrancas, denuncias e bloqueios.
 
-- organizacao de viagens em grupo
-- planejamento de rotas, hospedagem e passeios em um unico fluxo
-- conexao entre viajantes, acomodacoes e experiencias turisticas
-- oferta de viagens e pacotes criados pelos usuarios
+Frontend (Next.js):
+
+- Landing page com pitch e busca rapida.
+- Login com Google e fluxo de completar perfil.
+- Busca de pacotes publicados com filtros e paginacao.
+- Criacao/edicao de pacotes e painel de "minhas viagens".
+
+## Visao de longo prazo
+
+Construir o principal hub para viagens em grupo no Brasil, conectando viajantes,
+organizadores e parceiros locais em um unico ecossistema de pacotes e experiencias.
 
