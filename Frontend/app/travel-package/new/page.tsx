@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { AppHeaderActions } from "../../components/app-header-actions";
 import { TravelPackageForm } from "../../components/travel-package-form";
 import styles from "./new.module.css";
 
@@ -48,7 +49,8 @@ export default async function TravelPackageNewPage({
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
-        <div>
+        <div className={styles.header}>
+          <div>
           <h1 className={styles.title}>
             {editPackageId ? "Editar pacote de viagem" : "Criar pacote de viagem"}
           </h1>
@@ -57,6 +59,8 @@ export default async function TravelPackageNewPage({
               ? "Atualize os detalhes do seu pacote publicado."
               : "Preencha os detalhes do pacote para comecar a organizar sua viagem."}
           </p>
+          </div>
+          <AppHeaderActions />
         </div>
 
         <section className={styles.panel}>

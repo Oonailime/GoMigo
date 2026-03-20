@@ -41,6 +41,16 @@ export class PacotesController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('minhas-viagens')
+  findMyTrips(@Req() req: { user: { sub: number | null } }) {
+    if (!req.user.sub) {
+      throw new UnauthorizedException('usuario sem perfil completo');
+    }
+
+    return this.pacotesService.findTripsForUser(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id/gerenciar')
   findOneForManagement(
     @Param('id', ParseIntPipe) id: number,
@@ -51,6 +61,19 @@ export class PacotesController {
     }
 
     return this.pacotesService.findOneForOrganizador(id, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/detalhes')
+  findOneForParticipant(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: { user: { sub: number | null } },
+  ) {
+    if (!req.user.sub) {
+      throw new UnauthorizedException('usuario sem perfil completo');
+    }
+
+    return this.pacotesService.findOneForParticipant(id, req.user.sub);
   }
 
   @Get('search')

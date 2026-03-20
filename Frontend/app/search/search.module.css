@@ -112,6 +112,9 @@
 
 .primaryButton,
 .secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   padding: 10px 18px;
   border: 1px solid transparent;
@@ -119,6 +122,10 @@
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
   text-decoration: none;
   font-size: 0.9rem;
+  font-family: inherit;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
 }
 
 .primaryButton {
@@ -292,6 +299,88 @@
   color: var(--soft);
   font-size: 0.92rem;
   line-height: 1.5;
+}
+
+.cardActions {
+  display: grid;
+  gap: 10px;
+}
+
+.manageButton {
+  background: #f1ad49;
+  color: #081018;
+}
+
+.manageButton:hover {
+  background: #ffd089;
+}
+
+.messageBox {
+  width: 100%;
+  min-height: 72px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.manageNote {
+  display: flex;
+  align-items: center;
+  resize: none;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.requestFeedback {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  opacity: 0.88;
+  transition: opacity 220ms ease;
+}
+
+.primaryButton {
+  position: relative;
+  overflow: hidden;
+}
+
+.primaryButtonSuccess {
+  background: #8be0ae;
+  color: #081018;
+  animation: requestPulse 420ms ease;
+}
+
+.primaryButtonPending {
+  background: rgba(78, 199, 176, 0.18);
+  color: var(--accentStrong);
+  border-color: rgba(78, 199, 176, 0.35);
+  transition: background 260ms ease, color 260ms ease, border-color 260ms ease,
+    opacity 260ms ease;
+}
+
+.primaryButtonParticipating {
+  background: #2f9e68;
+  color: #f5fff9;
+  border-color: transparent;
+}
+
+@keyframes requestPulse {
+  0% {
+    transform: scale(0.98);
+    opacity: 0.72;
+  }
+
+  55% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .emptyState {

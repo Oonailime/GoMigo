@@ -37,6 +37,13 @@
   gap: 24px;
 }
 
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .title {
   margin: 0;
   font-family: var(--font-display), sans-serif;
@@ -58,4 +65,10 @@
   padding: 28px;
   display: grid;
   gap: 16px;
+}
+
+@media (max-width: 860px) {
+  .header {
+    flex-direction: column;
+  }
 }

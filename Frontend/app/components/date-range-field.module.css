@@ -77,9 +77,13 @@
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: var(--panelStrong);
+  background: #112131;
   box-shadow: var(--shadow);
   z-index: 4;
+}
+
+:global(:root[data-theme="light"]) .panel {
+  background: #fffaf4;
 }
 
 .header {
@@ -129,7 +133,11 @@
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 18px;
-  background: var(--fieldBg);
+  background: #0d1b2b;
+}
+
+:global(:root[data-theme="light"]) .calendarMonth {
+  background: #ffffff;
 }
 
 .calendarMonthCaption {

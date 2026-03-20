@@ -90,7 +90,7 @@ export class AuthService {
         userStatus,
       });
 
-      return { accessToken, userStatus };
+      return { accessToken, userStatus, userId: user?.id ?? null };
     } catch (error) {
       console.error('[auth][google] login failed', {
         message: error instanceof Error ? error.message : String(error),

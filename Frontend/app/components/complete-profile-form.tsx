@@ -146,6 +146,7 @@ export function CompleteProfileForm({
         accessToken: string;
         userStatus: "ACTIVE";
         user?: {
+          id?: number;
           name?: string | null;
         };
       };
@@ -153,6 +154,7 @@ export function CompleteProfileForm({
       await update({
         backendAccessToken: data.accessToken,
         backendUserStatus: data.userStatus,
+        backendUserId: data.user?.id,
         user: {
           ...session.user,
           name: data.user?.name ?? name,

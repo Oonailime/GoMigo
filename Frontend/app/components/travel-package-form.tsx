@@ -3,6 +3,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { CityAutocomplete } from "./city-autocomplete";
 import { DateRangeField } from "./date-range-field";
 import styles from "./travel-package-form.module.css";
 
@@ -19,6 +20,7 @@ type TravelPackageFormState = {
   seats: string;
   price: string;
   notes: string;
+  privacy: "PUBLICO" | "PRIVADO";
 };
 
 type EditablePackage = {
@@ -43,6 +45,7 @@ const initialState: TravelPackageFormState = {
   seats: "",
   price: "",
   notes: "",
+  privacy: "PUBLICO",
 };
 
 const createAddressPayload = (value: string) => {
@@ -96,6 +99,11 @@ export function TravelPackageForm({
       return;
     }
 
+    if (!formState.origin.includes(" - ") || !formState.destination.includes(" - ")) {
+      setError("Selecione origem e destino a partir das sugestoes de municipios.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);
@@ -134,7 +142,7 @@ export function TravelPackageForm({
         valorPorPessoaPrevisto: formState.price ? Math.round(Number(formState.price)) : undefined,
         dataInicio: formState.startDate || undefined,
         dataFim: formState.endDate || undefined,
-        privacidade: "PUBLICO",
+        privacidade: editPackageId ? undefined : formState.privacy,
       };
 
       const packageResponse = await fetch(
@@ -202,29 +210,29 @@ export function TravelPackageForm({
           />
         </label>
 
-        <label className={styles.field}>
-          <span className={styles.label}>Origem</span>
-          <input
-            className={styles.input}
-            type="text"
-            placeholder="Ex.: Sao Paulo"
+        <div className={styles.autocompleteField}>
+          <CityAutocomplete
+            label="Origem"
             value={formState.origin}
-            onChange={updateField("origin")}
-            required
+            onChange={(value) =>
+              setFormState((current) => ({ ...current, origin: value }))
+            }
+            placeholder="Ex.: Sao Paulo - SP"
+            helperText="Selecione um municipio sugerido para manter o pacote encontravel."
           />
-        </label>
+        </div>
 
-        <label className={styles.field}>
-          <span className={styles.label}>Destino</span>
-          <input
-            className={styles.input}
-            type="text"
-            placeholder="Ex.: Belo Horizonte"
+        <div className={styles.autocompleteField}>
+          <CityAutocomplete
+            label="Destino"
             value={formState.destination}
-            onChange={updateField("destination")}
-            required
+            onChange={(value) =>
+              setFormState((current) => ({ ...current, destination: value }))
+            }
+            placeholder="Ex.: Belo Horizonte - MG"
+            helperText="Use a mesma base de cidades da busca."
           />
-        </label>
+        </div>
 
         <label className={styles.field}>
           <span className={styles.label}>Vagas</span>
@@ -253,6 +261,39 @@ export function TravelPackageForm({
           />
         </label>
       </div>
+
+      {!editPackageId ? (
+        <div className={styles.field}>
+          <span className={styles.label}>Visibilidade do pacote</span>
+          <div className={styles.privacyOptions}>
+            <button
+              type="button"
+              className={`${styles.privacyButton} ${
+                formState.privacy === "PUBLICO" ? styles.privacyButtonActive : ""
+              }`}
+              onClick={() =>
+                setFormState((current) => ({ ...current, privacy: "PUBLICO" }))
+              }
+            >
+              Publico
+            </button>
+            <button
+              type="button"
+              className={`${styles.privacyButton} ${
+                formState.privacy === "PRIVADO" ? styles.privacyButtonActive : ""
+              }`}
+              onClick={() =>
+                setFormState((current) => ({ ...current, privacy: "PRIVADO" }))
+              }
+            >
+              Privado
+            </button>
+          </div>
+          <span className={styles.labelHint}>
+            Essa opcao so pode ser definida na criacao do pacote.
+          </span>
+        </div>
+      ) : null}
 
       <DateRangeField
         startDate={formState.startDate}
@@ -323,5 +364,6 @@ function mapPackageToFormState(pkg?: EditablePackage | null): TravelPackageFormS
     seats: pkg.vagas ? String(pkg.vagas) : "",
     price: pkg.valorPorPessoaPrevisto ? String(pkg.valorPorPessoaPrevisto) : "",
     notes: pkg.regrasViagem ?? "",
+    privacy: "PUBLICO",
   };
 }

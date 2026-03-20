@@ -44,6 +44,44 @@ export class PacotesService {
     });
   }
 
+  async findTripsForUser(idUser: number) {
+    if (!idUser || Number.isNaN(idUser)) {
+      throw new BadRequestException('idUser invalido');
+    }
+
+    const [asOrganizer, asTraveler] = await Promise.all([
+      this.prisma.pacoteViagem.findMany({
+        where: { idOrganizador: idUser },
+        orderBy: { dataCriacao: 'desc' },
+        include: {
+          enderecoPartida: true,
+          enderecoDestino: true,
+        },
+      }),
+      this.prisma.pacoteViagem.findMany({
+        where: {
+          viajantes: {
+            some: {
+              idUser,
+            },
+          },
+        },
+        orderBy: { dataCriacao: 'desc' },
+        include: {
+          enderecoPartida: true,
+          enderecoDestino: true,
+        },
+      }),
+    ]);
+
+    const organizerIds = new Set(asOrganizer.map((item) => item.id));
+
+    return {
+      asOrganizer,
+      asTraveler: asTraveler.filter((item) => !organizerIds.has(item.id)),
+    };
+  }
+
   async findOne(id: number) {
     if (!id || Number.isNaN(id)) {
       throw new BadRequestException('id invalido');
@@ -72,6 +110,54 @@ export class PacotesService {
 
     if (pacote.idOrganizador !== idOrganizador) {
       throw new NotFoundException('pacote nao encontrado para este organizador');
+    }
+
+    return pacote;
+  }
+
+  async findOneForParticipant(id: number, idUser: number) {
+    if (!idUser || Number.isNaN(idUser)) {
+      throw new BadRequestException('idUser invalido');
+    }
+
+    const pacote = await this.prisma.pacoteViagem.findUnique({
+      where: { id },
+      include: {
+        enderecoPartida: true,
+        enderecoDestino: true,
+        organizador: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phoneNumber: true,
+          },
+        },
+        viajantes: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phoneNumber: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!pacote) {
+      throw new NotFoundException('pacote nao encontrado');
+    }
+
+    const isParticipant =
+      pacote.idOrganizador === idUser ||
+      pacote.viajantes.some((viajante) => viajante.idUser === idUser);
+
+    if (!isParticipant) {
+      throw new NotFoundException('pacote nao encontrado para este usuario');
     }
 
     return pacote;
@@ -133,10 +219,8 @@ export class PacotesService {
     const pageSize = dto.pageSize ?? 12;
 
     const baseWhere: Prisma.PacoteViagemWhereInput = {
+      status: 'ATIVO',
       privacidade: { not: 'PRIVADO' },
-      anuncios: {
-        some: { statusAnuncio: 'ATIVO' },
-      },
     };
 
     if (dto.tipo) {
@@ -158,7 +242,6 @@ export class PacotesService {
     const include = {
       enderecoPartida: true,
       enderecoDestino: true,
-      anuncios: true,
     } as const;
 
     const pagination = {

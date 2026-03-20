@@ -31,7 +31,7 @@ export function UserMenu() {
         <button
           type="button"
           className={styles.button}
-          onClick={() => signIn("google", { callbackUrl: "/travel-package/new" })}
+          onClick={() => signIn("google", { callbackUrl: "/travel-package" })}
         >
           Entrar
         </button>
@@ -52,7 +52,6 @@ export function UserMenu() {
           <span className={styles.userName}>
             {session.user.name ?? session.user.email ?? "Usuario"}
           </span>
-          <span className={styles.userMeta}>Conectado</span>
         </div>
       </button>
 
@@ -63,7 +62,14 @@ export function UserMenu() {
             className={styles.menuItem}
             onClick={() => setIsOpen(false)}
           >
-            Pacotes de viagem
+            Pacotes geridos por mim
+          </Link>
+          <Link
+            href="/my-trips"
+            className={styles.menuItem}
+            onClick={() => setIsOpen(false)}
+          >
+            Minhas viagens
           </Link>
           <Link
             href="/travel-package/new"

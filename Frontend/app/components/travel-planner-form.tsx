@@ -9,11 +9,17 @@ import {
 } from "../data/search-storage";
 import { BRAZILIAN_TRIP_MODES } from "../data/trip-modes";
 import { CityAutocomplete } from "./city-autocomplete";
+import { NotificationBell } from "./notification-bell";
 import { SocialLoginButtons } from "./social-login-buttons";
 import { ThemeToggle } from "./theme-toggle";
 import { TripModeSelect } from "./trip-mode-select";
 import { UserMenu } from "./user-menu";
 import dynamic from "next/dynamic";
+
+const LANDING_TRIP_MODES = [
+  { value: "TODOS", label: "Todos os formatos" },
+  ...BRAZILIAN_TRIP_MODES,
+];
 
 const DateRangeField = dynamic(
   () => import("./date-range-field").then((mod) => mod.DateRangeField),
@@ -55,7 +61,7 @@ export function TravelPlannerForm() {
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
   const [originCity, setOriginCity] = useState("");
   const [destinationCity, setDestinationCity] = useState("");
-  const [tripMode, setTripMode] = useState(BRAZILIAN_TRIP_MODES[0].value);
+  const [tripMode, setTripMode] = useState(LANDING_TRIP_MODES[0].value);
   const [travelStartDate, setTravelStartDate] = useState("");
   const [travelEndDate, setTravelEndDate] = useState("");
 
@@ -83,8 +89,11 @@ export function TravelPlannerForm() {
     const params = new URLSearchParams({
       cidadePartida: originCity || defaultSearchDraft.cidadePartida,
       cidadeDestino: destinationCity || defaultSearchDraft.cidadeDestino,
-      tipo: tripMode,
     });
+
+    if (tripMode !== "TODOS") {
+      params.set("tipo", tripMode);
+    }
 
     if (travelStartDate) {
       params.set("dataInicio", travelStartDate);
@@ -106,6 +115,7 @@ export function TravelPlannerForm() {
         </div>
         <div className={styles.panelActions}>
           <ThemeToggle currentTheme={themeMode} onThemeChange={setThemeMode} />
+          <NotificationBell />
           <UserMenu />
         </div>
       </div>
@@ -133,7 +143,7 @@ export function TravelPlannerForm() {
 
         <div className={styles.formColumn}>
           <TripModeSelect
-            options={BRAZILIAN_TRIP_MODES}
+            options={LANDING_TRIP_MODES}
             value={tripMode}
             onChange={setTripMode}
           />

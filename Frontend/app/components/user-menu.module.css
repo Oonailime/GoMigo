@@ -16,11 +16,12 @@
   color: var(--text);
   cursor: pointer;
   padding: 10px 14px;
+  font-family: inherit;
 }
 
 .userInfo {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  align-items: center;
   text-align: right;
 }
 
@@ -30,13 +31,6 @@
   color: var(--text);
 }
 
-.userMeta {
-  color: var(--soft);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
 .button,
 .buttonSecondary {
   border: 1px solid transparent;
@@ -44,6 +38,7 @@
   padding: 8px 14px;
   cursor: pointer;
   font-size: 0.85rem;
+  font-family: inherit;
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
@@ -90,6 +85,7 @@
   padding: 10px 12px;
   cursor: pointer;
   font-size: 0.92rem;
+  font-family: inherit;
 }
 
 .menuItem:hover,

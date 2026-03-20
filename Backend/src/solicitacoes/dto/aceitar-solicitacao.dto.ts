@@ -1,8 +1,1 @@
-import { IsInt } from 'class-validator';
-import { Type } from 'class-transformer';
-
-export class AceitarSolicitacaoDto {
-  @Type(() => Number)
-  @IsInt()
-  idUserOrganizador: number;
-}
+export class AceitarSolicitacaoDto {}

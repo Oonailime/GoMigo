@@ -45,6 +45,14 @@ export function MyPackagesPanel() {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const totalPending = packages.reduce(
+    (sum, item) =>
+      sum +
+      item.solicitacoesParticipacao.filter(
+        (solicitation) => solicitation.statusSolicitacao === "PENDENTE",
+      ).length,
+    0,
+  );
 
   const loadPackages = async () => {
     if (!session?.backendAccessToken) {
@@ -160,6 +168,10 @@ export function MyPackagesPanel() {
 
   return (
     <section className={styles.list}>
+      <div className={styles.overview}>
+        <strong className={styles.overviewValue}>{totalPending}</strong>
+        <span className={styles.overviewLabel}>solicitacoes pendentes</span>
+      </div>
       {error ? <p className={styles.error}>{error}</p> : null}
       {packages.map((item) => (
         <article key={item.id} className={styles.card}>
@@ -184,6 +196,9 @@ export function MyPackagesPanel() {
           <div className={styles.packageActions}>
             <Link href={`/travel-package/new?edit=${item.id}`} className={styles.editLink}>
               Editar pacote
+            </Link>
+            <Link href={`/my-trips/${item.id}`} className={styles.detailsLink}>
+              Detalhes da viagem
             </Link>
           </div>
 

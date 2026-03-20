@@ -5,6 +5,7 @@ declare module "next-auth" {
   interface Session {
     backendAccessToken?: string;
     backendUserStatus?: "ACTIVE" | "INCOMPLETE";
+    backendUserId?: number;
   }
 }
 
@@ -13,5 +14,6 @@ declare module "next-auth/jwt" {
     googleIdToken?: string;
     backendAccessToken?: string;
     backendUserStatus?: "ACTIVE" | "INCOMPLETE";
+    backendUserId?: number;
   }
 }

@@ -8,11 +8,15 @@
   padding: 10px;
   border-radius: 18px;
   border: 1px solid var(--line);
-  background: var(--panelStrong);
+  background: #112131;
   box-shadow: var(--shadow);
   z-index: 3;
   max-height: 260px;
   overflow-y: auto;
+}
+
+:global(:root[data-theme="light"]) .results {
+  background: #fffaf4;
 }
 
 .item {
@@ -28,7 +32,12 @@
 
 .item:hover,
 .item[aria-selected="true"] {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+:global(:root[data-theme="light"]) .item:hover,
+:global(:root[data-theme="light"]) .item[aria-selected="true"] {
+  background: rgba(17, 33, 49, 0.08);
 }
 
 .loading {

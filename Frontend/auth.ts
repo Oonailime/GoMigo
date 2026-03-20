@@ -35,10 +35,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             const data = (await response.json()) as {
               accessToken: string;
               userStatus: "ACTIVE" | "INCOMPLETE";
+              userId: number | null;
             };
 
             token.backendAccessToken = data.accessToken;
             token.backendUserStatus = data.userStatus;
+            token.backendUserId = data.userId ?? undefined;
           } else {
             token.backendUserStatus = "INCOMPLETE";
           }
@@ -59,6 +61,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (session.backendUserStatus) {
           token.backendUserStatus = session.backendUserStatus;
         }
+
+        if (session.backendUserId) {
+          token.backendUserId = session.backendUserId;
+        }
       }
 
       return token;
@@ -70,6 +76,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
       session.backendAccessToken = token.backendAccessToken;
       session.backendUserStatus = token.backendUserStatus;
+      session.backendUserId = token.backendUserId;
       return session;
     },
   },

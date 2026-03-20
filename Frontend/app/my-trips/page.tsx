@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { AppHeaderActions } from "../components/app-header-actions";
-import { MyPackagesPanel } from "../components/my-packages-panel";
-import styles from "./published.module.css";
+import { MyTripsHeaderActions } from "../components/my-trips-header-actions";
+import { MyTripsPanel } from "../components/my-trips-panel";
+import styles from "./my-trips.module.css";
 
-export default async function TravelPackageManagementPage() {
+export default async function MyTripsPage() {
   const session = await auth();
 
   if (!session) {
@@ -21,15 +21,15 @@ export default async function TravelPackageManagementPage() {
         <header className={styles.header}>
           <div>
             <span className={styles.badge}>GoMigo</span>
-            <h1 className={styles.title}>Pacotes publicados</h1>
+            <h1 className={styles.title}>Minhas viagens</h1>
             <p className={styles.subtitle}>
-              Gerencie seus pacotes publicados e acompanhe as solicitacoes de participacao.
+              Acompanhe os pacotes que voce organiza e as viagens das quais participa.
             </p>
           </div>
-          <AppHeaderActions />
+          <MyTripsHeaderActions />
         </header>
 
-        <MyPackagesPanel />
+        <MyTripsPanel />
       </div>
     </main>
   );

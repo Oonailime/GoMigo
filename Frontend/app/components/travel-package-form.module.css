@@ -14,9 +14,19 @@
   gap: 8px;
 }
 
+.autocompleteField {
+  min-width: 0;
+}
+
 .label {
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.labelHint {
+  color: var(--soft);
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .input,
@@ -49,6 +59,33 @@
 
 .textarea {
   resize: vertical;
+}
+
+.privacyOptions {
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.privacyButton {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  padding: 10px 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.privacyButton:hover {
+  transform: translateY(-1px);
+}
+
+.privacyButtonActive {
+  background: var(--accent);
+  color: var(--buttonText);
+  border-color: transparent;
 }
 
 .actions {

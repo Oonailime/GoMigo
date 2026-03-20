@@ -34,12 +34,15 @@ export class SolicitacoesService {
     throw new ConflictException('conflito de concorrencia, tente novamente');
   }
 
-  async solicitarParticipacao(idPacoteViagem: number, data: {
-    idUser: number;
+  async solicitarParticipacao(idPacoteViagem: number, idUser: number, data: {
     mensagemSolicitacao?: string;
   }) {
     if (!idPacoteViagem || Number.isNaN(idPacoteViagem)) {
       throw new BadRequestException('idPacoteViagem invalido');
+    }
+
+    if (!idUser || Number.isNaN(idUser)) {
+      throw new BadRequestException('idUser invalido');
     }
 
     const pacote = await this.prisma.pacoteViagem.findUnique({ where: { id: idPacoteViagem } });
@@ -47,11 +50,28 @@ export class SolicitacoesService {
       throw new NotFoundException('pacote nao encontrado');
     }
 
+    if (pacote.idOrganizador === idUser) {
+      throw new ConflictException('o organizador nao pode solicitar participacao no proprio pacote');
+    }
+
+    const existingAccepted = await this.prisma.viajante.findUnique({
+      where: {
+        idPacoteViagem_idUser: {
+          idPacoteViagem,
+          idUser,
+        },
+      },
+    });
+
+    if (existingAccepted) {
+      throw new ConflictException('usuario ja participa deste pacote');
+    }
+
     try {
       return await this.prisma.solicitacaoParticipacao.create({
         data: {
           idPacoteViagem,
-          idUser: data.idUser,
+          idUser,
           mensagemSolicitacao: data.mensagemSolicitacao,
           statusSolicitacao: 'PENDENTE',
         },
@@ -198,5 +218,86 @@ export class SolicitacoesService {
         },
       },
     });
+  }
+
+  async findMine(idUser: number) {
+    if (!idUser || Number.isNaN(idUser)) {
+      throw new BadRequestException('idUser invalido');
+    }
+
+    return this.prisma.solicitacaoParticipacao.findMany({
+      where: { idUser },
+      orderBy: { dataSolicitacao: 'desc' },
+      include: {
+        pacoteViagem: {
+          select: {
+            id: true,
+            titulo: true,
+            idOrganizador: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getNotifications(idUser: number) {
+    if (!idUser || Number.isNaN(idUser)) {
+      throw new BadRequestException('idUser invalido');
+    }
+
+    const [organizerNotifications, travelerNotifications] = await Promise.all([
+      this.prisma.solicitacaoParticipacao.findMany({
+        where: {
+          statusSolicitacao: 'PENDENTE',
+          pacoteViagem: {
+            idOrganizador: idUser,
+          },
+        },
+        orderBy: { dataSolicitacao: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          pacoteViagem: {
+            select: {
+              id: true,
+              titulo: true,
+            },
+          },
+        },
+      }),
+      this.prisma.solicitacaoParticipacao.findMany({
+        where: {
+          idUser,
+          statusSolicitacao: {
+            in: ['ACEITA', 'REJEITADA'],
+          },
+        },
+        orderBy: [
+          { dataResposta: 'desc' },
+          { dataSolicitacao: 'desc' },
+        ],
+        include: {
+          pacoteViagem: {
+            select: {
+              id: true,
+              titulo: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      totalPendentes: organizerNotifications.length,
+      totalRespostas: travelerNotifications.length,
+      total: organizerNotifications.length + travelerNotifications.length,
+      organizerNotifications,
+      travelerNotifications,
+    };
   }
 }

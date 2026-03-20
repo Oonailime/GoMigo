@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import { BRAZILIAN_TRIP_MODES } from "../data/trip-modes";
 import {
@@ -12,6 +13,7 @@ import {
   type SearchDraft,
 } from "../data/search-storage";
 import { CityAutocomplete } from "../components/city-autocomplete";
+import { NotificationBell } from "../components/notification-bell";
 import { ThemeToggle } from "../components/theme-toggle";
 import { TripModeSelect } from "../components/trip-mode-select";
 import { UserMenu } from "../components/user-menu";
@@ -21,6 +23,8 @@ const DateRangeField = dynamic(
   () => import("../components/date-range-field").then((mod) => mod.DateRangeField),
   { ssr: false },
 );
+const backendUrl =
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
 
 const PAGE_SIZE = 12;
 const SEARCH_MODE_OPTIONS = [
@@ -44,6 +48,7 @@ type SearchResponse = {
 
 type PackageCard = {
   id: number;
+  idOrganizador: number;
   titulo: string;
   descricao?: string | null;
   vagas: number;
@@ -64,6 +69,7 @@ export default function SearchPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
   const [originCity, setOriginCity] = useState("");
   const [destinationCity, setDestinationCity] = useState("");
@@ -81,10 +87,112 @@ export default function SearchPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(
+    session?.backendUserId ?? null,
+  );
+  const [myRequests, setMyRequests] = useState<Record<number, string>>({});
+  const [requestMessages, setRequestMessages] = useState<Record<number, string>>({});
+  const [requestFeedback, setRequestFeedback] = useState<Record<number, string>>({});
+  const [requestVisualStatus, setRequestVisualStatus] = useState<
+    Record<number, "idle" | "sending" | "success">
+  >({});
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
   }, [themeMode]);
+
+  useEffect(() => {
+    if (typeof session?.backendUserId === "number") {
+      setCurrentUserId(session.backendUserId);
+      return;
+    }
+
+    if (!session?.backendAccessToken) {
+      setCurrentUserId(null);
+      return;
+    }
+
+    let active = true;
+
+    const loadCurrentUser = async () => {
+      try {
+        const response = await fetch(`${backendUrl}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${session.backendAccessToken}`,
+          },
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as { id: number };
+
+        if (active) {
+          setCurrentUserId(data.id);
+        }
+      } catch {}
+    };
+
+    void loadCurrentUser();
+
+    return () => {
+      active = false;
+    };
+  }, [session?.backendAccessToken, session?.backendUserId]);
+
+  useEffect(() => {
+    if (!session?.backendAccessToken) {
+      setMyRequests({});
+      return;
+    }
+
+    let active = true;
+
+    const loadRequests = async () => {
+      try {
+        const response = await fetch("http://localhost:3001/api/solicitacoes/minhas", {
+          headers: {
+            Authorization: `Bearer ${session.backendAccessToken}`,
+          },
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as Array<{
+          idPacoteViagem: number;
+          statusSolicitacao: string;
+        }>;
+
+        if (!active) {
+          return;
+        }
+
+        const latestRequestByPackage = data.reduce<Record<number, string>>(
+          (accumulator, item) => {
+            if (!(item.idPacoteViagem in accumulator)) {
+              accumulator[item.idPacoteViagem] = item.statusSolicitacao;
+            }
+
+            return accumulator;
+          },
+          {},
+        );
+
+        setMyRequests(latestRequestByPackage);
+      } catch {}
+    };
+
+    void loadRequests();
+
+    return () => {
+      active = false;
+    };
+  }, [session?.backendAccessToken]);
 
   useEffect(() => {
     const draft = readSearchDraft();
@@ -261,6 +369,68 @@ export default function SearchPage() {
     syncUrl(submittedFilters, page);
   };
 
+  const handleRequestParticipation = async (packageId: number) => {
+    if (!session?.backendAccessToken) {
+      setRequestFeedback((current) => ({
+        ...current,
+        [packageId]: "Entre com sua conta para solicitar participacao.",
+      }));
+      return;
+    }
+
+    setRequestVisualStatus((current) => ({ ...current, [packageId]: "sending" }));
+    setRequestFeedback((current) => ({ ...current, [packageId]: "" }));
+
+    try {
+      const response = await fetch(`${backendUrl}/solicitacoes/pacote/${packageId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.backendAccessToken}`,
+        },
+        body: JSON.stringify({
+          mensagemSolicitacao: requestMessages[packageId]?.trim() || undefined,
+        }),
+      });
+
+      const data = (await response.json().catch(() => null)) as
+        | { message?: string | string[] }
+        | null;
+
+      if (!response.ok) {
+        const message = Array.isArray(data?.message)
+          ? data.message.join(", ")
+          : data?.message;
+        setRequestFeedback((current) => ({
+          ...current,
+          [packageId]: message ?? "Nao foi possivel enviar a solicitacao.",
+        }));
+        return;
+      }
+
+      setMyRequests((current) => ({ ...current, [packageId]: "PENDENTE" }));
+      setRequestVisualStatus((current) => ({ ...current, [packageId]: "success" }));
+      setRequestFeedback((current) => ({
+        ...current,
+        [packageId]: "Solicitacao enviada ao organizador.",
+      }));
+
+      window.setTimeout(() => {
+        setRequestVisualStatus((current) => ({ ...current, [packageId]: "idle" }));
+      }, 1100);
+    } catch {
+      setRequestFeedback((current) => ({
+        ...current,
+        [packageId]: "Falha de conexao ao enviar a solicitacao.",
+      }));
+      setRequestVisualStatus((current) => ({ ...current, [packageId]: "idle" }));
+    }
+  };
+
+  const handleOpenTripDetails = (packageId: number) => {
+    router.push(`/my-trips/${packageId}`);
+  };
+
   return (
     <main className={styles.pageShell}>
       <header className={styles.appBar}>
@@ -274,6 +444,7 @@ export default function SearchPage() {
             Voltar ao inicio
           </Link>
           <ThemeToggle currentTheme={themeMode} onThemeChange={setThemeMode} />
+          <NotificationBell />
           <UserMenu />
         </div>
       </header>
@@ -391,6 +562,75 @@ export default function SearchPage() {
                 {item.descricao ? (
                   <p className={styles.cardDescription}>{item.descricao}</p>
                 ) : null}
+
+                {currentUserId === item.idOrganizador ? (
+                  <div className={styles.cardActions}>
+                    <div className={`${styles.messageBox} ${styles.manageNote}`}>
+                      Este pacote foi publicado por voce. Use este atalho para revisar
+                      participantes, editar detalhes e acompanhar as solicitacoes.
+                    </div>
+                    <Link
+                      href={`/travel-package/new?edit=${item.id}`}
+                      className={`${styles.primaryButton} ${styles.manageButton}`}
+                    >
+                      Gerenciar pacote
+                    </Link>
+                  </div>
+                ) : (
+                  <div className={styles.cardActions}>
+                    <textarea
+                      className={styles.messageBox}
+                      rows={2}
+                      placeholder="Mensagem opcional para o organizador"
+                      value={requestMessages[item.id] ?? ""}
+                      onChange={(event) =>
+                        setRequestMessages((current) => ({
+                          ...current,
+                          [item.id]: event.target.value,
+                        }))
+                      }
+                    />
+                    <button
+                      type="button"
+                      className={`${styles.primaryButton} ${
+                        requestVisualStatus[item.id] === "success"
+                          ? styles.primaryButtonSuccess
+                          : ""
+                      } ${
+                        myRequests[item.id] === "PENDENTE"
+                          ? styles.primaryButtonPending
+                          : ""
+                      } ${
+                        myRequests[item.id] === "ACEITA"
+                          ? styles.primaryButtonParticipating
+                          : ""
+                      }`}
+                      disabled={
+                        requestVisualStatus[item.id] === "sending" ||
+                        requestVisualStatus[item.id] === "success" ||
+                        myRequests[item.id] === "PENDENTE"
+                      }
+                      onClick={() =>
+                        myRequests[item.id] === "ACEITA"
+                          ? handleOpenTripDetails(item.id)
+                          : void handleRequestParticipation(item.id)
+                      }
+                    >
+                      {requestVisualStatus[item.id] === "sending"
+                        ? "Enviando..."
+                        : requestVisualStatus[item.id] === "success"
+                          ? "Check enviado"
+                        : myRequests[item.id] === "PENDENTE"
+                        ? "Solicitacao pendente"
+                        : myRequests[item.id] === "ACEITA"
+                          ? "Voce ja participa"
+                          : "Solicitar entrada"}
+                    </button>
+                    {requestFeedback[item.id] ? (
+                      <p className={styles.requestFeedback}>{requestFeedback[item.id]}</p>
+                    ) : null}
+                  </div>
+                )}
               </article>
             ))}
           </div>
@@ -426,8 +666,6 @@ export default function SearchPage() {
 
 function normalizeCityForBackend(value: string) {
   return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -441,13 +679,14 @@ function formatDateRange(startDate?: string | null, endDate?: string | null) {
 }
 
 function formatDate(value: string) {
-  const date = new Date(value);
+  const normalizedValue = value.slice(0, 10);
+  const [year, month, day] = normalizedValue.split("-");
 
-  if (Number.isNaN(date.getTime())) {
+  if (!year || !month || !day) {
     return value;
   }
 
-  return new Intl.DateTimeFormat("pt-BR").format(date);
+  return `${day}/${month}/${year}`;
 }
 
 function formatPrice(value?: number | null) {
