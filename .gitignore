@@ -24,3 +24,4 @@ Backend/.env
 *.tsbuildinfo
 Backend/.env.example
 Frontend/.env.example
+ajv-8.18.0.tgz
