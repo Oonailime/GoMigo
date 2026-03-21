@@ -7,10 +7,6 @@ export class CriarAvaliacaoDto {
 
   @Type(() => Number)
   @IsInt()
-  idUserAutor: number;
-
-  @Type(() => Number)
-  @IsInt()
   idPacoteViagem: number;
 
   @ValidateIf((o) => o.tipo !== 'PACOTE')

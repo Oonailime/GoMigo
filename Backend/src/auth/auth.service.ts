@@ -149,34 +149,152 @@ export class AuthService {
       throw new BadRequestException('email invalido');
     }
 
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const [user] = await this.prisma.$queryRawUnsafe<
+      Array<{
+        id: number;
+        name: string;
+        cpf: string;
+        phoneNumber: string;
+        email: string;
+        status: string;
+        sobreMim: string | null;
+        personalidade: string | null;
+        experienciaViagem: string | null;
+        gostaDeFazer: string | null;
+      }>
+    >(
+      `SELECT
+        id,
+        name,
+        cpf,
+        "phoneNumber",
+        email,
+        status,
+        "sobreMim",
+        personalidade,
+        "experienciaViagem",
+        "gostaDeFazer"
+      FROM "tbUser"
+      WHERE email = $1
+      LIMIT 1`,
+      email,
+    );
+
     if (!user) {
       throw new UnauthorizedException('usuario nao encontrado');
     }
 
-    return user;
+    const [ratingSummary, avaliacoesRecebidas] = await Promise.all([
+      this.prisma.avaliacao.aggregate({
+        where: {
+          idUserAvaliado: user.id,
+        },
+        _avg: {
+          nota: true,
+        },
+        _count: {
+          _all: true,
+        },
+      }),
+      this.prisma.avaliacao.findMany({
+        where: {
+          idUserAvaliado: user.id,
+        },
+        orderBy: {
+          dataAvaliacao: 'desc',
+        },
+        include: {
+          autor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          pacoteViagem: {
+            select: {
+              id: true,
+              titulo: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      ...user,
+      ratingMedia: ratingSummary._avg.nota ?? null,
+      totalAvaliacoes: ratingSummary._count._all,
+      avaliacoesRecebidas,
+    };
   }
 
   async updateProfile(
     email: string,
-    data: { name?: string; cpf?: string; phoneNumber?: string },
+    data: {
+      name?: string;
+      cpf?: string;
+      phoneNumber?: string;
+      sobreMim?: string;
+      personalidade?: string;
+      experienciaViagem?: string;
+      gostaDeFazer?: string;
+    },
   ) {
     if (!email) {
       throw new BadRequestException('email invalido');
     }
 
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.getProfile(email);
     if (!user) {
       throw new UnauthorizedException('usuario nao encontrado');
     }
 
-    return this.prisma.user.update({
-      where: { email },
-      data: {
-        name: data.name ?? user.name,
-        cpf: data.cpf ?? user.cpf,
-        phoneNumber: data.phoneNumber ?? user.phoneNumber,
-      },
-    });
+    const [updated] = await this.prisma.$queryRawUnsafe<
+      Array<{
+        id: number;
+        name: string;
+        cpf: string;
+        phoneNumber: string;
+        email: string;
+        status: string;
+        sobreMim: string | null;
+        personalidade: string | null;
+        experienciaViagem: string | null;
+        gostaDeFazer: string | null;
+      }>
+    >(
+      `UPDATE "tbUser"
+      SET
+        name = $1,
+        cpf = $2,
+        "phoneNumber" = $3,
+        "sobreMim" = $4,
+        personalidade = $5,
+        "experienciaViagem" = $6,
+        "gostaDeFazer" = $7
+      WHERE email = $8
+      RETURNING
+        id,
+        name,
+        cpf,
+        "phoneNumber",
+        email,
+        status,
+        "sobreMim",
+        personalidade,
+        "experienciaViagem",
+        "gostaDeFazer"`,
+      data.name ?? user.name,
+      data.cpf ?? user.cpf,
+      data.phoneNumber ?? user.phoneNumber,
+      data.sobreMim ?? user.sobreMim,
+      data.personalidade ?? user.personalidade,
+      data.experienciaViagem ?? user.experienciaViagem,
+      data.gostaDeFazer ?? user.gostaDeFazer,
+      email,
+    );
+
+    return updated;
   }
 }

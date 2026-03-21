@@ -22,6 +22,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     async jwt({ token, account, trigger, session }) {
       if (account?.id_token) {
         token.googleIdToken = account.id_token;
+        token.backendAccessToken = undefined;
+        token.backendUserStatus = undefined;
+        token.backendUserId = undefined;
 
         try {
           const response = await fetch(`${backendUrl}/auth/google`, {
@@ -42,10 +45,14 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             token.backendUserStatus = data.userStatus;
             token.backendUserId = data.userId ?? undefined;
           } else {
+            token.backendAccessToken = undefined;
             token.backendUserStatus = "INCOMPLETE";
+            token.backendUserId = undefined;
           }
         } catch {
+          token.backendAccessToken = undefined;
           token.backendUserStatus = "INCOMPLETE";
+          token.backendUserId = undefined;
         }
       }
 
@@ -54,15 +61,15 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           token.name = session.user.name;
         }
 
-        if (session.backendAccessToken) {
+        if (session.backendAccessToken !== undefined) {
           token.backendAccessToken = session.backendAccessToken;
         }
 
-        if (session.backendUserStatus) {
+        if (session.backendUserStatus !== undefined) {
           token.backendUserStatus = session.backendUserStatus;
         }
 
-        if (session.backendUserId) {
+        if (session.backendUserId !== undefined) {
           token.backendUserId = session.backendUserId;
         }
       }

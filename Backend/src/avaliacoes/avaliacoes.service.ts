@@ -8,6 +8,22 @@ type TipoAvaliacao = 'PACOTE' | 'ORGANIZADOR' | 'VIAJANTE';
 export class AvaliacoesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private getTodayKey() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  private canEvaluatePackage(pacote: { status: string; dataFim: Date | null }) {
+    if (pacote.status === 'FINALIZADO') {
+      return true;
+    }
+
+    if (!pacote.dataFim) {
+      return false;
+    }
+
+    return this.getTodayKey() > pacote.dataFim.toISOString().slice(0, 10);
+  }
+
   async criar(data: {
     tipo: TipoAvaliacao;
     idUserAutor: number;
@@ -29,8 +45,8 @@ export class AvaliacoesService {
       throw new NotFoundException('pacote nao encontrado');
     }
 
-    if (pacote.status !== 'FINALIZADO') {
-      throw new ForbiddenException('pacote ainda nao finalizado');
+    if (!this.canEvaluatePackage(pacote)) {
+      throw new ForbiddenException('pacote ainda nao elegivel para avaliacao');
     }
 
     const autorEhOrganizador = pacote.idOrganizador === data.idUserAutor;
@@ -43,7 +59,7 @@ export class AvaliacoesService {
       },
     });
 
-    if (!autorEhOrganizador && !autorEhViajante) {
+    if (!autorEhOrganizador && (!autorEhViajante || autorEhViajante.statusParticipacao !== 'ATIVO')) {
       throw new ForbiddenException('autor nao participa do pacote');
     }
 
@@ -121,7 +137,7 @@ export class AvaliacoesService {
         },
       });
 
-      if (!alvoViajante) {
+      if (!alvoViajante || alvoViajante.statusParticipacao !== 'ATIVO') {
         throw new ForbiddenException('usuario avaliado nao eh viajante do pacote');
       }
 
@@ -161,8 +177,8 @@ export class AvaliacoesService {
       throw new NotFoundException('pacote nao encontrado');
     }
 
-    if (pacote.status !== 'FINALIZADO') {
-      throw new ForbiddenException('pacote ainda nao finalizado');
+    if (!this.canEvaluatePackage(pacote)) {
+      throw new ForbiddenException('pacote ainda nao elegivel para avaliacao');
     }
 
     const autorEhOrganizador = pacote.idOrganizador === idUserAutor;
@@ -175,12 +191,15 @@ export class AvaliacoesService {
       },
     });
 
-    if (!autorEhOrganizador && !autorEhViajante) {
+    if (!autorEhOrganizador && (!autorEhViajante || autorEhViajante.statusParticipacao !== 'ATIVO')) {
       throw new ForbiddenException('autor nao participa do pacote');
     }
 
     const viajantes = await this.prisma.viajante.findMany({
-      where: { idPacoteViagem },
+      where: {
+        idPacoteViagem,
+        statusParticipacao: 'ATIVO',
+      },
       select: { idUser: true },
     });
 

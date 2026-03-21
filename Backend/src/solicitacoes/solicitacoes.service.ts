@@ -245,7 +245,7 @@ export class SolicitacoesService {
       throw new BadRequestException('idUser invalido');
     }
 
-    const [organizerNotifications, travelerNotifications] = await Promise.all([
+    const [organizerNotifications, travelerNotifications, evaluationNotifications] = await Promise.all([
       this.prisma.solicitacaoParticipacao.findMany({
         where: {
           statusSolicitacao: 'PENDENTE',
@@ -290,14 +290,43 @@ export class SolicitacoesService {
           },
         },
       }),
+      this.prisma.avaliacao.findMany({
+        where: {
+          idUserAvaliado: idUser,
+        },
+        orderBy: {
+          dataAvaliacao: 'desc',
+        },
+        take: 20,
+        include: {
+          autor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          pacoteViagem: {
+            select: {
+              id: true,
+              titulo: true,
+            },
+          },
+        },
+      }),
     ]);
 
     return {
       totalPendentes: organizerNotifications.length,
       totalRespostas: travelerNotifications.length,
-      total: organizerNotifications.length + travelerNotifications.length,
+      totalAvaliacoes: evaluationNotifications.length,
+      total:
+        organizerNotifications.length +
+        travelerNotifications.length +
+        evaluationNotifications.length,
       organizerNotifications,
       travelerNotifications,
+      evaluationNotifications,
     };
   }
 }

@@ -14,6 +14,7 @@ type NotificationPayload = {
   total: number;
   totalPendentes: number;
   totalRespostas: number;
+  totalAvaliacoes: number;
   organizerNotifications: Array<{
     id: number;
     user: { name?: string | null; email: string };
@@ -24,6 +25,13 @@ type NotificationPayload = {
     statusSolicitacao: string;
     motivoRecusa?: string | null;
     pacoteViagem: { id: number; titulo: string };
+  }>;
+  evaluationNotifications: Array<{
+    id: number;
+    tipo: string;
+    nota: number;
+    autor: { name?: string | null; email: string };
+    pacoteViagem?: { id: number; titulo: string } | null;
   }>;
 };
 
@@ -66,15 +74,23 @@ export function NotificationBell() {
         const payload = (await response.json()) as NotificationPayload;
         const dismissed = readDismissedNotifications();
         const visibleTravelerNotifications = payload.travelerNotifications.filter(
-          (item) => !dismissed.includes(item.id),
+          (item) => !dismissed.includes(`traveler:${item.id}`),
+        );
+        const visibleEvaluationNotifications = payload.evaluationNotifications.filter(
+          (item) => !dismissed.includes(`evaluation:${item.id}`),
         );
 
         if (active) {
           setData({
             ...payload,
             travelerNotifications: visibleTravelerNotifications,
+            evaluationNotifications: visibleEvaluationNotifications,
             totalRespostas: visibleTravelerNotifications.length,
-            total: payload.totalPendentes + visibleTravelerNotifications.length,
+            totalAvaliacoes: visibleEvaluationNotifications.length,
+            total:
+              payload.totalPendentes +
+              visibleTravelerNotifications.length +
+              visibleEvaluationNotifications.length,
           });
         }
       } catch {}
@@ -141,7 +157,7 @@ export function NotificationBell() {
                   type="button"
                   className={styles.itemButton}
                   onClick={() => {
-                    dismissNotification(item.id);
+                    dismissNotification(`traveler:${item.id}`);
                     setData((current) =>
                       current
                         ? {
@@ -165,6 +181,39 @@ export function NotificationBell() {
                   {item.statusSolicitacao === "ACEITA" ? "aceita" : "rejeitada"}
                 </button>
               ))}
+
+              {data.evaluationNotifications.map((item) => (
+                <button
+                  key={`evaluation-${item.id}`}
+                  type="button"
+                  className={styles.itemButton}
+                  onClick={() => {
+                    dismissNotification(`evaluation:${item.id}`);
+                    setData((current) =>
+                      current
+                        ? {
+                            ...current,
+                            evaluationNotifications: current.evaluationNotifications.filter(
+                              (notification) => notification.id !== item.id,
+                            ),
+                            totalAvaliacoes: Math.max(0, current.totalAvaliacoes - 1),
+                            total: Math.max(0, current.total - 1),
+                          }
+                        : current,
+                    );
+                    setIsOpen(false);
+                    router.push("/profile");
+                  }}
+                >
+                  <strong>{item.autor.name || item.autor.email}</strong> avaliou voce com nota{" "}
+                  <strong>{item.nota}</strong>
+                  {item.pacoteViagem ? (
+                    <>
+                      {" "}em <span>{item.pacoteViagem.titulo}</span>
+                    </>
+                  ) : null}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -175,22 +224,22 @@ export function NotificationBell() {
 
 function readDismissedNotifications() {
   if (typeof window === "undefined") {
-    return [] as number[];
+    return [] as string[];
   }
 
   try {
     const raw = window.localStorage.getItem(DISMISSED_NOTIFICATIONS_KEY);
     if (!raw) {
-      return [] as number[];
+      return [] as string[];
     }
 
-    return JSON.parse(raw) as number[];
+    return (JSON.parse(raw) as Array<string | number>).map((item) => String(item));
   } catch {
-    return [] as number[];
+    return [] as string[];
   }
 }
 
-function dismissNotification(id: number) {
+function dismissNotification(id: string) {
   if (typeof window === "undefined") {
     return;
   }

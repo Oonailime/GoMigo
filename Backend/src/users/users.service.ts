@@ -11,6 +11,10 @@ export class UsersService {
     phoneNumber: string;
     email: string;
     status: string;
+    sobreMim?: string;
+    personalidade?: string;
+    experienciaViagem?: string;
+    gostaDeFazer?: string;
   }) {
     return this.prisma.user.create({ data });
   }
@@ -40,6 +44,10 @@ export class UsersService {
       phoneNumber: string;
       email: string;
       status: string;
+      sobreMim: string;
+      personalidade: string;
+      experienciaViagem: string;
+      gostaDeFazer: string;
     }>,
   ) {
     if (!id || Number.isNaN(id)) {

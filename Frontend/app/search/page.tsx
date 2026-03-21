@@ -62,6 +62,12 @@ type PackageCard = {
     cidade: string;
     estado: string;
   };
+  organizador?: {
+    id: number;
+    name?: string | null;
+    ratingMedia?: number | null;
+    totalAvaliacoes?: number;
+  };
 };
 
 export default function SearchPage() {
@@ -549,6 +555,19 @@ export default function SearchPage() {
                 </p>
 
                 <div className={styles.cardDetails}>
+                  <span>
+                    Organizador: {item.organizador?.name?.trim() || "Organizador sem nome"}
+                  </span>
+                  <span>
+                    Avaliacao:{" "}
+                    {formatRating(
+                      item.organizador?.ratingMedia,
+                      item.organizador?.totalAvaliacoes,
+                    )}
+                  </span>
+                </div>
+
+                <div className={styles.cardDetails}>
                   <span>{item.vagas} vagas</span>
                   <span>{formatDateRange(item.dataInicio, item.dataFim)}</span>
                   <span>{formatPrice(item.valorPorPessoaPrevisto)}</span>
@@ -694,4 +713,12 @@ function formatPrice(value?: number | null) {
     currency: "BRL",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function formatRating(value?: number | null, total?: number) {
+  if (typeof value !== "number" || !total) {
+    return "Sem avaliacoes";
+  }
+
+  return `${value.toFixed(1).replace(".", ",")} / 5 (${total})`;
 }

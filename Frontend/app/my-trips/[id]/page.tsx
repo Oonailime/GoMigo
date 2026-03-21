@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { MyTripsHeaderActions } from "../../components/my-trips-header-actions";
+import { TripCancelActions } from "./trip-cancel-actions";
+import { TripEvaluationPanel } from "./trip-evaluation-panel";
 import styles from "./trip-details.module.css";
 
 const backendUrl =
@@ -14,6 +16,8 @@ type TripDetails = {
   titulo: string;
   descricao?: string | null;
   status: string;
+  privacidade: string;
+  viewerRole?: "ORGANIZADOR" | "VIAJANTE";
   regrasViagem: string;
   vagas: number;
   valorPorPessoaPrevisto?: number | null;
@@ -70,6 +74,11 @@ export default async function MyTripDetailsPage({
   }
 
   const trip = (await response.json()) as TripDetails;
+  const sessionUserId = normalizeId(session.backendUserId);
+  const organizerId = normalizeId(trip.organizador.id);
+  const isOrganizer =
+    trip.viewerRole === "ORGANIZADOR" ||
+    (sessionUserId !== null && organizerId !== null && sessionUserId === organizerId);
 
   return (
     <main className={styles.page}>
@@ -106,12 +115,19 @@ export default async function MyTripDetailsPage({
             <Link href="/my-trips" className={styles.secondaryLink}>
               Voltar para minhas viagens
             </Link>
-            {session.backendUserId === trip.organizador.id ? (
+            {isOrganizer ? (
               <Link href={`/travel-package/new?edit=${trip.id}`} className={styles.primaryLink}>
                 Gerenciar pacote
               </Link>
             ) : null}
           </div>
+
+          <TripCancelActions
+            packageId={trip.id}
+            organizerId={organizerId ?? trip.organizador.id}
+            initialIsOrganizer={isOrganizer}
+            isPublicPackage={trip.privacidade !== "PRIVADO"}
+          />
         </section>
 
         <section className={styles.grid}>
@@ -145,6 +161,15 @@ export default async function MyTripDetailsPage({
               )}
             </div>
           </article>
+
+          <TripEvaluationPanel
+            packageId={trip.id}
+            organizer={{
+              id: trip.organizador.id,
+              name: trip.organizador.name,
+            }}
+            travelers={trip.viajantes}
+          />
         </section>
       </div>
     </main>
@@ -174,4 +199,13 @@ function formatPrice(value?: number | null) {
     currency: "BRL",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function normalizeId(value?: number | string | null) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const normalized = typeof value === "number" ? value : Number(value);
+  return Number.isNaN(normalized) ? null : normalized;
 }

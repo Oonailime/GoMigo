@@ -7,6 +7,57 @@ import { SearchPacotesDto } from './dto/search-pacotes.dto';
 export class PacotesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private getTodayKey() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  private getTodayDate() {
+    return new Date(`${this.getTodayKey()}T00:00:00.000Z`);
+  }
+
+  private async attachOrganizerPublicRatings<
+    T extends { idOrganizador: number; organizador?: { id: number; name: string | null } | null }
+  >(pacotes: T[]) {
+    if (pacotes.length === 0) {
+      return pacotes;
+    }
+
+    const organizerIds = Array.from(new Set(pacotes.map((pacote) => pacote.idOrganizador)));
+    const ratings = await this.prisma.avaliacao.groupBy({
+      by: ['idUserAvaliado'],
+      where: {
+        idUserAvaliado: { in: organizerIds },
+      },
+      _avg: {
+        nota: true,
+      },
+      _count: {
+        _all: true,
+      },
+    });
+
+    const ratingsMap = new Map(
+      ratings.map((rating) => [
+        rating.idUserAvaliado,
+        {
+          media: rating._avg.nota ?? null,
+          total: rating._count._all,
+        },
+      ]),
+    );
+
+    return pacotes.map((pacote) => ({
+      ...pacote,
+      organizador: pacote.organizador
+        ? {
+            ...pacote.organizador,
+            ratingMedia: ratingsMap.get(pacote.idOrganizador)?.media ?? null,
+            totalAvaliacoes: ratingsMap.get(pacote.idOrganizador)?.total ?? 0,
+          }
+        : pacote.organizador,
+    }));
+  }
+
   async create(data: Prisma.PacoteViagemUncheckedCreateInput) {
     return this.prisma.pacoteViagem.create({ data });
   }
@@ -39,7 +90,11 @@ export class PacotesService {
             },
           },
         },
-        viajantes: true,
+        viajantes: {
+          where: {
+            statusParticipacao: 'ATIVO',
+          },
+        },
       },
     });
   }
@@ -63,6 +118,7 @@ export class PacotesService {
           viajantes: {
             some: {
               idUser,
+              statusParticipacao: 'ATIVO',
             },
           },
         },
@@ -134,6 +190,9 @@ export class PacotesService {
           },
         },
         viajantes: {
+          where: {
+            statusParticipacao: 'ATIVO',
+          },
           include: {
             user: {
               select: {
@@ -160,7 +219,10 @@ export class PacotesService {
       throw new NotFoundException('pacote nao encontrado para este usuario');
     }
 
-    return pacote;
+    return {
+      ...pacote,
+      viewerRole: pacote.idOrganizador === idUser ? 'ORGANIZADOR' : 'VIAJANTE',
+    };
   }
 
   async update(id: number, data: Prisma.PacoteViagemUncheckedUpdateInput) {
@@ -189,10 +251,64 @@ export class PacotesService {
     return this.prisma.pacoteViagem.delete({ where: { id } });
   }
 
+  async deleteForOrganizador(id: number, idOrganizador: number) {
+    if (!idOrganizador || Number.isNaN(idOrganizador)) {
+      throw new BadRequestException('idOrganizador invalido');
+    }
+
+    const pacote = await this.findOne(id);
+    if (pacote.idOrganizador !== idOrganizador) {
+      throw new NotFoundException('pacote nao encontrado para este organizador');
+    }
+
+    return this.delete(id);
+  }
+
+  async cancelReservation(id: number, idUser: number) {
+    if (!idUser || Number.isNaN(idUser)) {
+      throw new BadRequestException('idUser invalido');
+    }
+
+    const pacote = await this.findOne(id);
+    if (pacote.idOrganizador === idUser) {
+      throw new BadRequestException('o organizador deve cancelar o pacote inteiro');
+    }
+
+    const viajante = await this.prisma.viajante.findUnique({
+      where: {
+        idPacoteViagem_idUser: {
+          idPacoteViagem: id,
+          idUser,
+        },
+      },
+    });
+
+    if (!viajante || viajante.statusParticipacao !== 'ATIVO') {
+      throw new NotFoundException('reserva nao encontrada para este usuario');
+    }
+
+    await this.prisma.viajante.delete({
+      where: {
+        idPacoteViagem_idUser: {
+          idPacoteViagem: id,
+          idUser,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: 'reserva cancelada com sucesso',
+    };
+  }
+
   async listarAnunciados() {
+    const today = this.getTodayDate();
+
     return this.prisma.pacoteViagem.findMany({
       where: {
         privacidade: { not: 'PRIVADO' },
+        dataInicio: { not: null, gte: today },
         anuncios: {
           some: {
             statusAnuncio: 'ATIVO',
@@ -206,6 +322,7 @@ export class PacotesService {
   }
 
   async search(dto: SearchPacotesDto) {
+    const today = this.getTodayDate();
     const dataInicio = dto.dataInicio;
     const dataFim = dto.dataFim;
 
@@ -221,6 +338,7 @@ export class PacotesService {
     const baseWhere: Prisma.PacoteViagemWhereInput = {
       status: 'ATIVO',
       privacidade: { not: 'PRIVADO' },
+      dataInicio: { not: null, gte: today },
     };
 
     if (dto.tipo) {
@@ -242,6 +360,12 @@ export class PacotesService {
     const include = {
       enderecoPartida: true,
       enderecoDestino: true,
+      organizador: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     } as const;
 
     const pagination = {
@@ -266,7 +390,7 @@ export class PacotesService {
           pacotes.length > 0
             ? 'Mostrando todos os pacotes publicados para os filtros atuais.'
             : 'Nao ha pacotes disponiveis para este filtro. Considere criar um novo pacote.',
-        pacotes,
+        pacotes: await this.attachOrganizerPublicRatings(pacotes),
         pagination: {
           page,
           pageSize,
@@ -292,7 +416,7 @@ export class PacotesService {
 
       return {
         modo: 'EXATO',
-        pacotes,
+        pacotes: await this.attachOrganizerPublicRatings(pacotes),
         pagination: {
           page,
           pageSize,
@@ -319,7 +443,7 @@ export class PacotesService {
       return {
         modo: 'INTERSECCAO',
         mensagem: 'Nao ha pacotes no periodo exato, mostrando datas proximas.',
-        pacotes,
+        pacotes: await this.attachOrganizerPublicRatings(pacotes),
         pagination: {
           page,
           pageSize,

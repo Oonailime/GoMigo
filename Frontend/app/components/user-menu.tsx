@@ -79,11 +79,11 @@ export function UserMenu() {
             Novo pacote
           </Link>
           <Link
-            href="/complete-profile?mode=edit"
+            href="/profile"
             className={styles.menuItem}
             onClick={() => setIsOpen(false)}
           >
-            Editar perfil
+            Meu perfil
           </Link>
           <button
             type="button"

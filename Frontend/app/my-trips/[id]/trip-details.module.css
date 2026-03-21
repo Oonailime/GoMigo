@@ -112,7 +112,8 @@
 }
 
 .primaryLink,
-.secondaryLink {
+.secondaryLink,
+.dangerButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -130,6 +131,35 @@
 .secondaryLink {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text);
+}
+
+.dangerButton {
+  border: 0;
+  background: #d85b45;
+  color: #fff6f1;
+  cursor: pointer;
+}
+
+.cancelPanel {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
+.warningText,
+.errorText {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.warningText {
+  color: var(--muted);
+}
+
+.errorText {
+  color: #ffb2a5;
 }
 
 .grid {
@@ -159,6 +189,48 @@
   gap: 10px;
 }
 
+.evaluationList,
+.evaluationForm,
+.fieldStack {
+  display: grid;
+  gap: 12px;
+}
+
+.evaluationItem {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.evaluationHeader,
+.evaluationActions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.evaluationTitle {
+  color: var(--text);
+}
+
+.selectField,
+.textAreaField {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  padding: 12px 14px;
+}
+
+.textAreaField {
+  resize: vertical;
+  min-height: 96px;
+}
+
 .participant {
   display: grid;
   gap: 2px;
@@ -169,14 +241,19 @@
 }
 
 :global(:root[data-theme="light"]) .secondaryLink,
-:global(:root[data-theme="light"]) .participant {
+:global(:root[data-theme="light"]) .participant,
+:global(:root[data-theme="light"]) .evaluationItem,
+:global(:root[data-theme="light"]) .selectField,
+:global(:root[data-theme="light"]) .textAreaField {
   background: rgba(17, 33, 49, 0.06);
 }
 
 @media (max-width: 860px) {
   .header,
   .heroTop,
-  .actionRow {
+  .actionRow,
+  .evaluationHeader,
+  .evaluationActions {
     flex-direction: column;
   }
 

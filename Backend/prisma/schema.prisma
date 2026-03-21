@@ -14,6 +14,10 @@ model User {
   phoneNumber              String                       @unique @map("phoneNumber") @db.VarChar(40)
   email                    String                       @unique @db.VarChar(80)
   status                   String                       @db.VarChar(30)
+  sobreMim                 String?                      @map("sobreMim") @db.Text
+  personalidade            String?                      @db.Text
+  experienciaViagem        String?                      @map("experienciaViagem") @db.Text
+  gostaDeFazer             String?                      @map("gostaDeFazer") @db.Text
   dataCriacao              DateTime                     @default(now()) @map("dataCriacao") @db.Timestamptz(6)
   assinaturas              Assinatura[]
   pacotesOrganizados       PacoteViagem[]               @relation("PacoteOrganizador")

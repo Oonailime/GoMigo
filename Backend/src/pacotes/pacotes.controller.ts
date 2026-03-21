@@ -111,7 +111,28 @@ export class PacotesController {
   }
 
   @Delete(':id')
-  delete(@Param('id', ParseIntPipe) id: number) {
-    return this.pacotesService.delete(id);
+  @UseGuards(JwtAuthGuard)
+  delete(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: { user: { sub: number | null } },
+  ) {
+    if (!req.user.sub) {
+      throw new UnauthorizedException('usuario sem perfil completo');
+    }
+
+    return this.pacotesService.deleteForOrganizador(id, req.user.sub);
+  }
+
+  @Delete(':id/reserva')
+  @UseGuards(JwtAuthGuard)
+  cancelReservation(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: { user: { sub: number | null } },
+  ) {
+    if (!req.user.sub) {
+      throw new UnauthorizedException('usuario sem perfil completo');
+    }
+
+    return this.pacotesService.cancelReservation(id, req.user.sub);
   }
 }

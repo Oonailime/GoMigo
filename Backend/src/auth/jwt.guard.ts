@@ -29,7 +29,7 @@ export class JwtAuthGuard implements CanActivate {
       }
 
       const payload = decoded as unknown as {
-        sub: number | null;
+        sub: number | string | null;
         email: string;
         name?: string | null;
         status?: string;
@@ -39,7 +39,21 @@ export class JwtAuthGuard implements CanActivate {
         throw new UnauthorizedException('token invalido');
       }
 
-      request.user = payload;
+      const normalizedSub =
+        payload.sub === null || payload.sub === undefined
+          ? null
+          : typeof payload.sub === 'number'
+            ? payload.sub
+            : Number(payload.sub);
+
+      if (payload.sub !== null && payload.sub !== undefined && Number.isNaN(normalizedSub)) {
+        throw new UnauthorizedException('token invalido');
+      }
+
+      request.user = {
+        ...payload,
+        sub: normalizedSub,
+      };
       return true;
     } catch {
       throw new UnauthorizedException('token invalido');
