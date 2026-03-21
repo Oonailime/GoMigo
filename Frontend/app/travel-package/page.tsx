@@ -11,6 +11,10 @@ export default async function TravelPackageManagementPage() {
     redirect("/login");
   }
 
+  if (session.backendAuthError === "BACKEND_AUTH_FAILED" || !session.backendAccessToken) {
+    redirect("/login");
+  }
+
   if (session.backendUserStatus === "INCOMPLETE") {
     redirect("/complete-profile");
   }

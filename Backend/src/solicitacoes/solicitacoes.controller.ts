@@ -84,8 +84,16 @@ export class SolicitacoesController {
     return this.solicitacoesService.getNotifications(req.user.sub);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.solicitacoesService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: { user: { sub: number | null } },
+  ) {
+    if (!req.user.sub) {
+      throw new UnauthorizedException('usuario sem perfil completo');
+    }
+
+    return this.solicitacoesService.findOneForUser(id, req.user.sub);
   }
 }

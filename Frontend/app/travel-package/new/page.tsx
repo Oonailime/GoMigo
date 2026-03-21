@@ -23,15 +23,15 @@ export default async function TravelPackageNewPage({
     redirect("/login");
   }
 
+  if (session.backendAuthError === "BACKEND_AUTH_FAILED" || !session.backendAccessToken) {
+    redirect("/login");
+  }
+
   if (session.backendUserStatus === "INCOMPLETE") {
     redirect("/complete-profile");
   }
 
   if (editPackageId) {
-    if (!session.backendAccessToken) {
-      redirect("/travel-package");
-    }
-
     const response = await fetch(`${backendUrl}/pacotes/${editPackageId}/gerenciar`, {
       headers: {
         Authorization: `Bearer ${session.backendAccessToken}`,

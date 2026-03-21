@@ -25,6 +25,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         token.backendAccessToken = undefined;
         token.backendUserStatus = undefined;
         token.backendUserId = undefined;
+        token.backendAuthError = undefined;
 
         try {
           const response = await fetch(`${backendUrl}/auth/google`, {
@@ -44,15 +45,18 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             token.backendAccessToken = data.accessToken;
             token.backendUserStatus = data.userStatus;
             token.backendUserId = data.userId ?? undefined;
+            token.backendAuthError = undefined;
           } else {
             token.backendAccessToken = undefined;
-            token.backendUserStatus = "INCOMPLETE";
+            token.backendUserStatus = undefined;
             token.backendUserId = undefined;
+            token.backendAuthError = "BACKEND_AUTH_FAILED";
           }
         } catch {
           token.backendAccessToken = undefined;
-          token.backendUserStatus = "INCOMPLETE";
+          token.backendUserStatus = undefined;
           token.backendUserId = undefined;
+          token.backendAuthError = "BACKEND_AUTH_FAILED";
         }
       }
 
@@ -72,6 +76,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (session.backendUserId !== undefined) {
           token.backendUserId = session.backendUserId;
         }
+
+        if (session.backendAuthError !== undefined) {
+          token.backendAuthError = session.backendAuthError;
+        }
       }
 
       return token;
@@ -84,6 +92,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       session.backendAccessToken = token.backendAccessToken;
       session.backendUserStatus = token.backendUserStatus;
       session.backendUserId = token.backendUserId;
+      session.backendAuthError = token.backendAuthError;
       return session;
     },
   },

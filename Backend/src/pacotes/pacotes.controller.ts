@@ -86,9 +86,17 @@ export class PacotesController {
     return this.pacotesService.listarAnunciados();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.pacotesService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: { user: { sub: number | null } },
+  ) {
+    if (!req.user.sub) {
+      throw new UnauthorizedException('usuario sem perfil completo');
+    }
+
+    return this.pacotesService.findOneForParticipant(id, req.user.sub);
   }
 
   @Patch(':id')

@@ -187,6 +187,46 @@ export class SolicitacoesService {
     return solicitacao;
   }
 
+  async findOneForUser(id: number, idUser: number) {
+    if (!idUser || Number.isNaN(idUser)) {
+      throw new BadRequestException('idUser invalido');
+    }
+
+    const solicitacao = await this.prisma.solicitacaoParticipacao.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phoneNumber: true,
+          },
+        },
+        pacoteViagem: {
+          select: {
+            id: true,
+            titulo: true,
+            idOrganizador: true,
+          },
+        },
+      },
+    });
+
+    if (!solicitacao) {
+      throw new NotFoundException('solicitacao nao encontrada');
+    }
+
+    const canAccess =
+      solicitacao.idUser === idUser || solicitacao.pacoteViagem.idOrganizador === idUser;
+
+    if (!canAccess) {
+      throw new ForbiddenException('usuario nao pode visualizar esta solicitacao');
+    }
+
+    return solicitacao;
+  }
+
   async findByPacote(idPacoteViagem: number, idUserOrganizador: number) {
     if (!idPacoteViagem || Number.isNaN(idPacoteViagem)) {
       throw new BadRequestException('idPacoteViagem invalido');

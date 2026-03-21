@@ -17,6 +17,10 @@ export default async function CompleteProfilePage({
     redirect("/login");
   }
 
+  if (session.backendAuthError === "BACKEND_AUTH_FAILED") {
+    redirect("/login");
+  }
+
   if (session.backendUserStatus === "ACTIVE" && !isEditMode) {
     redirect("/travel-package/new");
   }
