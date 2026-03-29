@@ -7,6 +7,7 @@ declare module "next-auth" {
     backendUserStatus?: "ACTIVE" | "INCOMPLETE";
     backendUserId?: number;
     backendAuthError?: "BACKEND_AUTH_FAILED";
+    refreshBackendAuth?: boolean;
   }
 }
 
@@ -17,5 +18,6 @@ declare module "next-auth/jwt" {
     backendUserStatus?: "ACTIVE" | "INCOMPLETE";
     backendUserId?: number;
     backendAuthError?: "BACKEND_AUTH_FAILED";
+    refreshBackendAuth?: boolean;
   }
 }

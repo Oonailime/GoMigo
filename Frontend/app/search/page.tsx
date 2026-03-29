@@ -74,7 +74,7 @@ export default function SearchPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const { themeMode, setThemeMode } = useThemeMode();
   const [originCity, setOriginCity] = useState("");
   const [destinationCity, setDestinationCity] = useState("");
@@ -153,7 +153,7 @@ export default function SearchPage() {
 
     const loadRequests = async () => {
       try {
-        const response = await fetch("http://localhost:3001/api/solicitacoes/minhas", {
+        const response = await fetch(`${backendUrl}/solicitacoes/minhas`, {
           headers: {
             Authorization: `Bearer ${session.backendAccessToken}`,
           },
@@ -371,6 +371,18 @@ export default function SearchPage() {
   };
 
   const handleRequestParticipation = async (packageId: number) => {
+    const sendParticipationRequest = async (accessToken: string) =>
+      fetch(`${backendUrl}/solicitacoes/pacote/${packageId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          mensagemSolicitacao: requestMessages[packageId]?.trim() || undefined,
+        }),
+      });
+
     if (!session?.backendAccessToken) {
       setRequestFeedback((current) => ({
         ...current,
@@ -383,28 +395,39 @@ export default function SearchPage() {
     setRequestFeedback((current) => ({ ...current, [packageId]: "" }));
 
     try {
-      const response = await fetch(`${backendUrl}/solicitacoes/pacote/${packageId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.backendAccessToken}`,
-        },
-        body: JSON.stringify({
-          mensagemSolicitacao: requestMessages[packageId]?.trim() || undefined,
-        }),
-      });
-
-      const data = (await response.json().catch(() => null)) as
+      let response = await sendParticipationRequest(session.backendAccessToken);
+      let data = (await response.json().catch(() => null)) as
         | { message?: string | string[] }
         | null;
 
+      const message = Array.isArray(data?.message)
+        ? data.message.join(", ")
+        : data?.message;
+
+      if (
+        response.status === 401 &&
+        message?.toLowerCase().includes("token invalido")
+      ) {
+        const refreshedSession = await update({ refreshBackendAuth: true });
+        const refreshedAccessToken = refreshedSession?.backendAccessToken;
+
+        if (refreshedAccessToken) {
+          response = await sendParticipationRequest(refreshedAccessToken);
+          data = (await response.json().catch(() => null)) as
+            | { message?: string | string[] }
+            | null;
+        }
+      }
+
       if (!response.ok) {
-        const message = Array.isArray(data?.message)
+        const nextMessage = Array.isArray(data?.message)
           ? data.message.join(", ")
           : data?.message;
         setRequestFeedback((current) => ({
           ...current,
-          [packageId]: message ?? "Nao foi possivel enviar a solicitacao.",
+          [packageId]:
+            nextMessage ??
+            "Nao foi possivel enviar a solicitacao. Se o problema persistir, entre novamente.",
         }));
         return;
       }

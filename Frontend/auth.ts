@@ -20,49 +20,57 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async jwt({ token, account, trigger, session }) {
-      if (account?.id_token) {
-        token.googleIdToken = account.id_token;
-        token.backendAccessToken = undefined;
-        token.backendUserStatus = undefined;
-        token.backendUserId = undefined;
-        token.backendAuthError = undefined;
-
+      const exchangeGoogleTokenForBackendAuth = async (idToken: string) => {
         try {
           const response = await fetch(`${backendUrl}/auth/google`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ idToken: account.id_token }),
+            body: JSON.stringify({ idToken }),
             cache: "no-store",
           });
 
-          if (response.ok) {
-            const data = (await response.json()) as {
-              accessToken: string;
-              userStatus: "ACTIVE" | "INCOMPLETE";
-              userId: number | null;
-            };
-
-            token.backendAccessToken = data.accessToken;
-            token.backendUserStatus = data.userStatus;
-            token.backendUserId = data.userId ?? undefined;
-            token.backendAuthError = undefined;
-          } else {
+          if (!response.ok) {
             token.backendAccessToken = undefined;
             token.backendUserStatus = undefined;
             token.backendUserId = undefined;
             token.backendAuthError = "BACKEND_AUTH_FAILED";
+            return;
           }
+
+          const data = (await response.json()) as {
+            accessToken: string;
+            userStatus: "ACTIVE" | "INCOMPLETE";
+            userId: number | null;
+          };
+
+          token.backendAccessToken = data.accessToken;
+          token.backendUserStatus = data.userStatus;
+          token.backendUserId = data.userId ?? undefined;
+          token.backendAuthError = undefined;
         } catch {
           token.backendAccessToken = undefined;
           token.backendUserStatus = undefined;
           token.backendUserId = undefined;
           token.backendAuthError = "BACKEND_AUTH_FAILED";
         }
+      };
+
+      if (account?.id_token) {
+        token.googleIdToken = account.id_token;
+        token.backendAccessToken = undefined;
+        token.backendUserStatus = undefined;
+        token.backendUserId = undefined;
+        token.backendAuthError = undefined;
+        await exchangeGoogleTokenForBackendAuth(account.id_token);
       }
 
       if (trigger === "update") {
         if (session.user?.name) {
           token.name = session.user.name;
+        }
+
+        if (session.refreshBackendAuth && token.googleIdToken) {
+          await exchangeGoogleTokenForBackendAuth(token.googleIdToken);
         }
 
         if (session.backendAccessToken !== undefined) {
@@ -80,6 +88,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (session.backendAuthError !== undefined) {
           token.backendAuthError = session.backendAuthError;
         }
+
+        token.refreshBackendAuth = undefined;
       }
 
       return token;
