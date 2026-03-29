@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, ParseIntPipe, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, ParseIntPipe, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { CreatePacoteDto } from './dto/create-pacote.dto';
+import { UpsertRoteiroDto } from './dto/upsert-roteiro.dto';
 import { UpdatePacoteDto } from './dto/update-pacote.dto';
 import { SearchPacotesDto } from './dto/search-pacotes.dto';
 import { PacotesService } from './pacotes.service';
@@ -74,6 +75,33 @@ export class PacotesController {
     }
 
     return this.pacotesService.findOneForParticipant(id, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/roteiro')
+  findItinerary(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: { user: { sub: number | null } },
+  ) {
+    if (!req.user.sub) {
+      throw new UnauthorizedException('usuario sem perfil completo');
+    }
+
+    return this.pacotesService.findItineraryForParticipant(id, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/roteiro')
+  upsertItinerary(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: { user: { sub: number | null } },
+    @Body() body: UpsertRoteiroDto,
+  ) {
+    if (!req.user.sub) {
+      throw new UnauthorizedException('usuario sem perfil completo');
+    }
+
+    return this.pacotesService.upsertItinerary(id, req.user.sub, body);
   }
 
   @Get('search')

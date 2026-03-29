@@ -288,12 +288,15 @@ export class SolicitacoesService {
     const [organizerNotifications, travelerNotifications, evaluationNotifications] = await Promise.all([
       this.prisma.solicitacaoParticipacao.findMany({
         where: {
-          statusSolicitacao: 'PENDENTE',
           pacoteViagem: {
             idOrganizador: idUser,
           },
         },
-        orderBy: { dataSolicitacao: 'desc' },
+        orderBy: [
+          { dataResposta: 'desc' },
+          { dataSolicitacao: 'desc' },
+        ],
+        take: 20,
         include: {
           user: {
             select: {
