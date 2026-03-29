@@ -673,7 +673,17 @@ function DateTimeField({
           <span className={value ? styles.dateTimeValue : styles.dateTimePlaceholder}>
             {value ? formatDateTime(value) : "Selecionar data e horario"}
           </span>
-          <span className={styles.dateTimeBadge}>Calendario</span>
+          <span className={styles.dateTimeBadge} aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M8 3v3M16 3v3M4 9h16M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
         </button>
 
         {isOpen ? (
