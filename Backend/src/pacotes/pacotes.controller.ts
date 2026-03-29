@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, ParseIntPipe, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { CurrentUserId } from '../auth/current-user-id.decorator';
 import { CreatePacoteDto } from './dto/create-pacote.dto';
 import { UpsertRoteiroDto } from './dto/upsert-roteiro.dto';
@@ -103,12 +103,7 @@ export class PacotesController {
     @CurrentUserId() userId: number,
     @Body() body: UpdatePacoteDto,
   ) {
-    const pacote = await this.pacotesService.findOne(id);
-    if (pacote.idOrganizador !== userId) {
-      throw new UnauthorizedException('apenas o organizador pode editar o pacote');
-    }
-
-    return this.pacotesService.update(id, body);
+    return this.pacotesService.updateForOrganizador(id, userId, body);
   }
 
   @Delete(':id')

@@ -11,6 +11,8 @@
   },
   "include": [
     "app/components/trip-itinerary-editor.helpers.ts",
+    "app/lib/backend.ts",
+    "app/data/search-storage.ts",
     "tests/**/*.ts"
   ]
 }

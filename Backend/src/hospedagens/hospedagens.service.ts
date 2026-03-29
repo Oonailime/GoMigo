@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { assertOwnership, findOwnedPackageOrThrow } from '../auth/ownership.utils';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -21,20 +22,12 @@ export class HospedagensService {
   }
 
   private async ensureOrganizerOwnsPackage(idPacoteViagem: number, idOrganizador: number) {
-    const pacote = await this.prisma.pacoteViagem.findUnique({
-      where: { id: idPacoteViagem },
-      select: { id: true, idOrganizador: true },
-    });
-
-    if (!pacote) {
-      throw new NotFoundException('pacote nao encontrado');
-    }
-
-    if (pacote.idOrganizador !== idOrganizador) {
-      throw new ForbiddenException('apenas o organizador do pacote pode gerenciar hospedagens');
-    }
-
-    return pacote;
+    return findOwnedPackageOrThrow(
+      this.prisma,
+      idPacoteViagem,
+      idOrganizador,
+      () => new NotFoundException('pacote nao encontrado para este organizador'),
+    );
   }
 
   async createForOrganizer(
@@ -99,9 +92,11 @@ export class HospedagensService {
       throw new NotFoundException('hospedagem nao encontrada');
     }
 
-    if (hospedagem.pacoteViagem.idOrganizador !== idOrganizador) {
-      throw new ForbiddenException('usuario nao pode acessar esta hospedagem');
-    }
+    assertOwnership(
+      hospedagem.pacoteViagem.idOrganizador,
+      idOrganizador,
+      () => new ForbiddenException('usuario nao pode acessar esta hospedagem'),
+    );
 
     return hospedagem;
   }

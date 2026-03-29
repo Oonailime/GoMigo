@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/trip-itinerary-editor.helpers.test.js"
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/**/*.test.js"
   },
   "dependencies": {
     "next": "^15.5.14",

@@ -6,11 +6,31 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { assertOwnership, assertValidNumericId } from '../auth/ownership.utils';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class SolicitacoesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async findPacoteOrThrow(idPacoteViagem: number) {
+    const pacote = await this.prisma.pacoteViagem.findUnique({ where: { id: idPacoteViagem } });
+    if (!pacote) {
+      throw new NotFoundException('pacote nao encontrado');
+    }
+
+    return pacote;
+  }
+
+  private async findPacoteForOrganizerOrThrow(
+    idPacoteViagem: number,
+    idUserOrganizador: number,
+    buildForbiddenError: () => Error,
+  ) {
+    const pacote = await this.findPacoteOrThrow(idPacoteViagem);
+    assertOwnership(pacote.idOrganizador, idUserOrganizador, buildForbiddenError, 'idUserOrganizador');
+    return pacote;
+  }
 
   private async runSerializableTransaction<T>(
     fn: (tx: Prisma.TransactionClient) => Promise<T>,
@@ -41,14 +61,9 @@ export class SolicitacoesService {
       throw new BadRequestException('idPacoteViagem invalido');
     }
 
-    if (!idUser || Number.isNaN(idUser)) {
-      throw new BadRequestException('idUser invalido');
-    }
+    assertValidNumericId(idUser, 'idUser');
 
-    const pacote = await this.prisma.pacoteViagem.findUnique({ where: { id: idPacoteViagem } });
-    if (!pacote) {
-      throw new NotFoundException('pacote nao encontrado');
-    }
+    const pacote = await this.findPacoteOrThrow(idPacoteViagem);
 
     if (pacote.idOrganizador === idUser) {
       throw new ConflictException('o organizador nao pode solicitar participacao no proprio pacote');
@@ -89,6 +104,8 @@ export class SolicitacoesService {
       throw new BadRequestException('idSolicitacao invalido');
     }
 
+    assertValidNumericId(idUserOrganizador, 'idUserOrganizador');
+
     return this.runSerializableTransaction(async (tx) => {
       const solicitacao = await tx.solicitacaoParticipacao.findUnique({
         where: { id: idSolicitacao },
@@ -107,9 +124,12 @@ export class SolicitacoesService {
         throw new NotFoundException('pacote nao encontrado');
       }
 
-      if (pacote.idOrganizador !== idUserOrganizador) {
-        throw new ForbiddenException('apenas o organizador pode aceitar');
-      }
+      assertOwnership(
+        pacote.idOrganizador,
+        idUserOrganizador,
+        () => new ForbiddenException('apenas o organizador pode aceitar'),
+        'idUserOrganizador',
+      );
 
       const totalViajantes = await tx.viajante.count({
         where: { idPacoteViagem: pacote.id },
@@ -143,6 +163,8 @@ export class SolicitacoesService {
       throw new BadRequestException('idSolicitacao invalido');
     }
 
+    assertValidNumericId(idUserOrganizador, 'idUserOrganizador');
+
     const solicitacao = await this.prisma.solicitacaoParticipacao.findUnique({
       where: { id: idSolicitacao },
     });
@@ -155,14 +177,11 @@ export class SolicitacoesService {
       throw new ConflictException('solicitacao ja processada');
     }
 
-    const pacote = await this.prisma.pacoteViagem.findUnique({ where: { id: solicitacao.idPacoteViagem } });
-    if (!pacote) {
-      throw new NotFoundException('pacote nao encontrado');
-    }
-
-    if (pacote.idOrganizador !== idUserOrganizador) {
-      throw new ForbiddenException('apenas o organizador pode rejeitar');
-    }
+    await this.findPacoteForOrganizerOrThrow(
+      solicitacao.idPacoteViagem,
+      idUserOrganizador,
+      () => new ForbiddenException('apenas o organizador pode rejeitar'),
+    );
 
     return this.prisma.solicitacaoParticipacao.update({
       where: { id: solicitacao.id },
@@ -188,9 +207,7 @@ export class SolicitacoesService {
   }
 
   async findOneForUser(id: number, idUser: number) {
-    if (!idUser || Number.isNaN(idUser)) {
-      throw new BadRequestException('idUser invalido');
-    }
+    assertValidNumericId(idUser, 'idUser');
 
     const solicitacao = await this.prisma.solicitacaoParticipacao.findUnique({
       where: { id },
@@ -232,17 +249,11 @@ export class SolicitacoesService {
       throw new BadRequestException('idPacoteViagem invalido');
     }
 
-    const pacote = await this.prisma.pacoteViagem.findUnique({
-      where: { id: idPacoteViagem },
-    });
-
-    if (!pacote) {
-      throw new NotFoundException('pacote nao encontrado');
-    }
-
-    if (pacote.idOrganizador !== idUserOrganizador) {
-      throw new ForbiddenException('apenas o organizador pode visualizar as solicitacoes');
-    }
+    await this.findPacoteForOrganizerOrThrow(
+      idPacoteViagem,
+      idUserOrganizador,
+      () => new ForbiddenException('apenas o organizador pode visualizar as solicitacoes'),
+    );
 
     return this.prisma.solicitacaoParticipacao.findMany({
       where: { idPacoteViagem },
@@ -261,9 +272,7 @@ export class SolicitacoesService {
   }
 
   async findMine(idUser: number) {
-    if (!idUser || Number.isNaN(idUser)) {
-      throw new BadRequestException('idUser invalido');
-    }
+    assertValidNumericId(idUser, 'idUser');
 
     return this.prisma.solicitacaoParticipacao.findMany({
       where: { idUser },
@@ -281,9 +290,7 @@ export class SolicitacoesService {
   }
 
   async getNotifications(idUser: number) {
-    if (!idUser || Number.isNaN(idUser)) {
-      throw new BadRequestException('idUser invalido');
-    }
+    assertValidNumericId(idUser, 'idUser');
 
     const [organizerNotifications, travelerNotifications, evaluationNotifications] = await Promise.all([
       this.prisma.solicitacaoParticipacao.findMany({

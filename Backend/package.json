@@ -9,7 +9,7 @@
         "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
         "start:debug": "node --inspect -r ts-node/register -r tsconfig-paths/register src/main.ts",
         "start:prod": "node dist/main",
-        "test": "tsc -p tsconfig.test.json && node --test .test-dist/test/pacotes.utils.test.js",
+        "test": "tsc -p tsconfig.test.json && node --test .test-dist/test/**/*.test.js",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
         "prisma:studio": "prisma studio"

@@ -1,8 +1,25 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, TipoPacoteViagem } from '@prisma/client';
+import { assertOwnership, assertValidNumericId } from '../auth/ownership.utils';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpsertRoteiroDto } from './dto/upsert-roteiro.dto';
 import { SearchPacotesDto } from './dto/search-pacotes.dto';
+import { filterTravelerTrips, resolvePackageViewerRole } from './pacotes.access.utils';
+import {
+  buildItineraryTimeline,
+  mapAtividadesForItinerary,
+  mapCaronasForItinerary,
+  mapHospedagensForItinerary,
+  mapRoteiroHeader,
+} from './pacotes.itinerary.utils';
+import {
+  buildAtividadeUpsertData,
+  buildCaronaUpsertData,
+  buildHospedagemUpsertData,
+  collectSentEntityIds,
+  normalizeRoteiroMetadata,
+} from './pacotes.itinerary-upsert.utils';
+import { buildPacoteSearchContext, buildSearchResponse } from './pacotes.search.utils';
 import { createAddressData, formatCityLabel } from './pacotes.utils';
 
 @Injectable()
@@ -154,9 +171,7 @@ export class PacotesService {
   }
 
   async findTripsForUser(idUser: number) {
-    if (!idUser || Number.isNaN(idUser)) {
-      throw new BadRequestException('idUser invalido');
-    }
+    assertValidNumericId(idUser, 'idUser');
 
     const [asOrganizer, asTraveler] = await Promise.all([
       this.prisma.pacoteViagem.findMany({
@@ -184,11 +199,9 @@ export class PacotesService {
       }),
     ]);
 
-    const organizerIds = new Set(asOrganizer.map((item) => item.id));
-
     return {
       asOrganizer,
-      asTraveler: asTraveler.filter((item) => !organizerIds.has(item.id)),
+      asTraveler: filterTravelerTrips(asOrganizer, asTraveler),
     };
   }
 
@@ -212,23 +225,21 @@ export class PacotesService {
   }
 
   async findOneForOrganizador(id: number, idOrganizador: number) {
-    if (!idOrganizador || Number.isNaN(idOrganizador)) {
-      throw new BadRequestException('idOrganizador invalido');
-    }
+    assertValidNumericId(idOrganizador, 'idOrganizador');
 
     const pacote = await this.findOne(id);
 
-    if (pacote.idOrganizador !== idOrganizador) {
-      throw new NotFoundException('pacote nao encontrado para este organizador');
-    }
+    assertOwnership(
+      pacote.idOrganizador,
+      idOrganizador,
+      () => new NotFoundException('pacote nao encontrado para este organizador'),
+    );
 
     return pacote;
   }
 
   async findOneForParticipant(id: number, idUser: number) {
-    if (!idUser || Number.isNaN(idUser)) {
-      throw new BadRequestException('idUser invalido');
-    }
+    assertValidNumericId(idUser, 'idUser');
 
     const pacote = await this.prisma.pacoteViagem.findUnique({
       where: { id },
@@ -265,17 +276,15 @@ export class PacotesService {
       throw new NotFoundException('pacote nao encontrado');
     }
 
-    const isParticipant =
-      pacote.idOrganizador === idUser ||
-      pacote.viajantes.some((viajante) => viajante.idUser === idUser);
+    const viewerRole = resolvePackageViewerRole(pacote, idUser);
 
-    if (!isParticipant) {
+    if (!viewerRole) {
       throw new NotFoundException('pacote nao encontrado para este usuario');
     }
 
     return {
       ...pacote,
-      viewerRole: pacote.idOrganizador === idUser ? 'ORGANIZADOR' : 'VIAJANTE',
+      viewerRole,
     };
   }
 
@@ -339,77 +348,16 @@ export class PacotesService {
 
     const roteiro = roteiros[0] ?? null;
     const atividades = roteiro?.atividades ?? [];
-    const timeline = [
-      ...caronas.map((item) => ({
-        kind: 'CARONA' as const,
-        id: item.id,
-        title: `${formatCityLabel(item.enderecoPartida)} -> ${formatCityLabel(item.enderecoDestino)}`,
-        startsAt: item.dataIda?.toISOString() ?? null,
-        endsAt: item.dataVolta?.toISOString() ?? null,
-        subtitle: item.regrasCarona,
-      })),
-      ...hospedagens.map((item) => ({
-        kind: 'HOSPEDAGEM' as const,
-        id: item.id,
-        title: item.nomeLocal ?? 'Hospedagem',
-        startsAt: item.dataCheckin?.toISOString() ?? null,
-        endsAt: item.dataCheckout?.toISOString() ?? null,
-        subtitle: item.endereco ? formatCityLabel(item.endereco) : item.regrasHospedagem,
-      })),
-      ...atividades.map((item) => ({
-        kind: item.categoriaAtividade?.nome === 'Alimentacao' ? ('ALIMENTACAO' as const) : ('PASSEIO_TURISMO' as const),
-        id: item.id,
-        title: item.titulo,
-        startsAt: item.dataHoraInicio.toISOString(),
-        endsAt: item.dataHoraFim.toISOString(),
-        subtitle: item.endereco ? formatCityLabel(item.endereco) : item.descricao,
-      })),
-    ].sort((a, b) => {
-      const left = a.startsAt ? new Date(a.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
-      const right = b.startsAt ? new Date(b.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
-      return left - right;
-    });
+    const timeline = buildItineraryTimeline(caronas, hospedagens, atividades);
 
     return {
       packageId: pacote.id,
       viewerRole: pacote.viewerRole,
       canEdit: pacote.viewerRole === 'ORGANIZADOR',
-      roteiro: {
-        id: roteiro?.id ?? null,
-        titulo: roteiro?.titulo ?? 'Roteiro da viagem',
-        descricao: roteiro?.descricao ?? null,
-      },
-      caronas: caronas.map((item) => ({
-        id: item.id,
-        origem: item.enderecoPartida ? formatCityLabel(item.enderecoPartida) : null,
-        destino: item.enderecoDestino ? formatCityLabel(item.enderecoDestino) : null,
-        dataIda: item.dataIda?.toISOString() ?? null,
-        dataVolta: item.dataVolta?.toISOString() ?? null,
-        precoPorPessoa: item.precoPorPessoa ?? null,
-        regrasCarona: item.regrasCarona,
-        status: item.status,
-      })),
-      hospedagens: hospedagens.map((item) => ({
-        id: item.id,
-        nomeLocal: item.nomeLocal ?? null,
-        local: item.endereco ? formatCityLabel(item.endereco) : null,
-        dataCheckin: item.dataCheckin?.toISOString() ?? null,
-        dataCheckout: item.dataCheckout?.toISOString() ?? null,
-        precoPorPessoa: item.precoPorPessoa ?? null,
-        regrasHospedagem: item.regrasHospedagem,
-        statusReserva: item.statusReserva,
-      })),
-      atividades: atividades.map((item) => ({
-        id: item.id,
-        categoria:
-          item.categoriaAtividade?.nome === 'Alimentacao' ? 'ALIMENTACAO' : 'PASSEIO_TURISMO',
-        titulo: item.titulo,
-        descricao: item.descricao,
-        dataHoraInicio: item.dataHoraInicio.toISOString(),
-        dataHoraFim: item.dataHoraFim.toISOString(),
-        preco: item.preco ?? null,
-        local: item.endereco ? formatCityLabel(item.endereco) : null,
-      })),
+      roteiro: mapRoteiroHeader(roteiro),
+      caronas: mapCaronasForItinerary(caronas),
+      hospedagens: mapHospedagensForItinerary(hospedagens),
+      atividades: mapAtividadesForItinerary(atividades),
       timeline,
     };
   }
@@ -427,28 +375,18 @@ export class PacotesService {
         existingRoteiro
           ? await tx.roteiro.update({
               where: { id: existingRoteiro.id },
-              data: {
-                titulo: data.titulo?.trim() || 'Roteiro da viagem',
-                descricao: data.descricao?.trim() || null,
-              },
+              data: normalizeRoteiroMetadata(data),
             })
           : await tx.roteiro.create({
               data: {
                 idPacoteViagem: pacote.id,
-                titulo: data.titulo?.trim() || 'Roteiro da viagem',
-                descricao: data.descricao?.trim() || null,
+                ...normalizeRoteiroMetadata(data),
               },
             });
 
-      const sentCaronaIds = (data.caronas ?? []).flatMap((item) =>
-        typeof item.id === 'number' ? [item.id] : [],
-      );
-      const sentHospedagemIds = (data.hospedagens ?? []).flatMap((item) =>
-        typeof item.id === 'number' ? [item.id] : [],
-      );
-      const sentAtividadeIds = (data.atividades ?? []).flatMap((item) =>
-        typeof item.id === 'number' ? [item.id] : [],
-      );
+      const sentCaronaIds = collectSentEntityIds(data.caronas);
+      const sentHospedagemIds = collectSentEntityIds(data.hospedagens);
+      const sentAtividadeIds = collectSentEntityIds(data.atividades);
 
       await tx.carona.deleteMany({
         where: {
@@ -470,17 +408,13 @@ export class PacotesService {
       });
 
       for (const item of data.caronas ?? []) {
-        const caronaData = {
-          idPacoteViagem: pacote.id,
-          idMotorista: idOrganizador,
-          dataIda: item.dataIda ? new Date(item.dataIda) : null,
-          dataVolta: item.dataVolta ? new Date(item.dataVolta) : null,
-          precoPorPessoa: item.precoPorPessoa ?? null,
-          idEnderecoPartida: await this.getOrCreateEnderecoId(tx, item.origem),
-          idEnderecoDestino: await this.getOrCreateEnderecoId(tx, item.destino),
-          regrasCarona: item.regrasCarona?.trim() || 'Horarios e regras a combinar.',
-          status: item.status?.trim() || 'PLANEJADA',
-        };
+        const caronaData = buildCaronaUpsertData(
+          item,
+          pacote.id,
+          idOrganizador,
+          await this.getOrCreateEnderecoId(tx, item.origem),
+          await this.getOrCreateEnderecoId(tx, item.destino),
+        );
 
         if (item.id) {
           await tx.carona.update({
@@ -493,16 +427,11 @@ export class PacotesService {
       }
 
       for (const item of data.hospedagens ?? []) {
-        const hospedagemData = {
-          idPacoteViagem: pacote.id,
-          idEndereco: await this.getOrCreateEnderecoId(tx, item.local),
-          nomeLocal: item.nomeLocal?.trim() || 'Hospedagem',
-          dataCheckin: item.dataCheckin ? new Date(item.dataCheckin) : null,
-          dataCheckout: item.dataCheckout ? new Date(item.dataCheckout) : null,
-          precoPorPessoa: item.precoPorPessoa ?? null,
-          regrasHospedagem: item.regrasHospedagem?.trim() || 'Regras da hospedagem a combinar.',
-          statusReserva: item.statusReserva?.trim() || 'PLANEJADA',
-        };
+        const hospedagemData = buildHospedagemUpsertData(
+          item,
+          pacote.id,
+          await this.getOrCreateEnderecoId(tx, item.local),
+        );
 
         if (item.id) {
           await tx.hospedagem.update({
@@ -515,17 +444,13 @@ export class PacotesService {
       }
 
       for (const [index, item] of (data.atividades ?? []).entries()) {
-        const atividadeData = {
-          idRoteiro: roteiro.id,
-          idCategoriaAtividade: await this.getOrCreateCategoriaAtividadeId(tx, item.categoria),
-          idEndereco: await this.getOrCreateEnderecoId(tx, item.local),
-          titulo: item.titulo.trim(),
-          descricao: item.descricao?.trim() || item.titulo.trim(),
-          dataHoraInicio: new Date(item.dataHoraInicio),
-          dataHoraFim: new Date(item.dataHoraFim),
-          ordem: index + 1,
-          preco: item.preco ?? null,
-        };
+        const atividadeData = buildAtividadeUpsertData(
+          item,
+          roteiro.id,
+          await this.getOrCreateCategoriaAtividadeId(tx, item.categoria),
+          await this.getOrCreateEnderecoId(tx, item.local),
+          index + 1,
+        );
 
         if (item.id) {
           await tx.atividade.update({
@@ -555,6 +480,15 @@ export class PacotesService {
     return this.prisma.pacoteViagem.update({ where: { id }, data });
   }
 
+  async updateForOrganizador(
+    id: number,
+    idOrganizador: number,
+    data: Prisma.PacoteViagemUncheckedUpdateInput,
+  ) {
+    await this.findOneForOrganizador(id, idOrganizador);
+    return this.update(id, data);
+  }
+
   async delete(id: number) {
     if (!id || Number.isNaN(id)) {
       throw new BadRequestException('id invalido');
@@ -569,22 +503,12 @@ export class PacotesService {
   }
 
   async deleteForOrganizador(id: number, idOrganizador: number) {
-    if (!idOrganizador || Number.isNaN(idOrganizador)) {
-      throw new BadRequestException('idOrganizador invalido');
-    }
-
-    const pacote = await this.findOne(id);
-    if (pacote.idOrganizador !== idOrganizador) {
-      throw new NotFoundException('pacote nao encontrado para este organizador');
-    }
-
+    await this.findOneForOrganizador(id, idOrganizador);
     return this.delete(id);
   }
 
   async cancelReservation(id: number, idUser: number) {
-    if (!idUser || Number.isNaN(idUser)) {
-      throw new BadRequestException('idUser invalido');
-    }
+    assertValidNumericId(idUser, 'idUser');
 
     const pacote = await this.findOne(id);
     if (pacote.idOrganizador === idUser) {
@@ -640,39 +564,8 @@ export class PacotesService {
 
   async search(dto: SearchPacotesDto) {
     const today = this.getTodayDate();
-    const dataInicio = dto.dataInicio;
-    const dataFim = dto.dataFim;
-
-    if (dataInicio && dataFim && dataInicio > dataFim) {
-      throw new BadRequestException('dataInicio nao pode ser maior que dataFim');
-    }
-
-    const cidadePartida = dto.cidadePartida?.split(' - ')[0]?.trim() ?? dto.cidadePartida;
-    const cidadeDestino = dto.cidadeDestino?.split(' - ')[0]?.trim() ?? dto.cidadeDestino;
-    const page = dto.page ?? 1;
-    const pageSize = dto.pageSize ?? 12;
-
-    const baseWhere: Prisma.PacoteViagemWhereInput = {
-      status: 'ATIVO',
-      privacidade: { not: 'PRIVADO' },
-      dataInicio: { not: null, gte: today },
-    };
-
-    if (dto.tipo) {
-      baseWhere.tipoPacoteViagem = dto.tipo as TipoPacoteViagem;
-    }
-
-    if (cidadePartida) {
-      baseWhere.enderecoPartida = {
-        cidade: { contains: cidadePartida, mode: 'insensitive' },
-      };
-    }
-
-    if (cidadeDestino) {
-      baseWhere.enderecoDestino = {
-        cidade: { contains: cidadeDestino, mode: 'insensitive' },
-      };
-    }
+    const { dataInicio, dataFim, page, pageSize, baseWhere, pagination } =
+      buildPacoteSearchContext(today, dto);
 
     const include = {
       enderecoPartida: true,
@@ -685,12 +578,6 @@ export class PacotesService {
       },
     } as const;
 
-    const pagination = {
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      orderBy: { dataCriacao: 'desc' as const },
-    };
-
     if (!dataInicio || !dataFim) {
       const [pacotes, total] = await Promise.all([
         this.prisma.pacoteViagem.findMany({
@@ -701,20 +588,16 @@ export class PacotesService {
         this.prisma.pacoteViagem.count({ where: baseWhere }),
       ]);
 
-      return {
-        modo: pacotes.length > 0 ? 'EXATO' : 'SEM_RESULTADOS',
-        mensagem:
-          pacotes.length > 0
-            ? 'Mostrando todos os pacotes publicados para os filtros atuais.'
-            : 'Nao ha pacotes disponiveis para este filtro. Considere criar um novo pacote.',
-        pacotes: await this.attachOrganizerPublicRatings(pacotes),
-        pagination: {
-          page,
-          pageSize,
-          total,
-          totalPages: Math.max(1, Math.ceil(total / pageSize)),
-        },
-      };
+      return buildSearchResponse(
+        pacotes.length > 0 ? 'EXATO' : 'SEM_RESULTADOS',
+        page,
+        pageSize,
+        total,
+        await this.attachOrganizerPublicRatings(pacotes),
+        pacotes.length > 0
+          ? 'Mostrando todos os pacotes publicados para os filtros atuais.'
+          : 'Nao ha pacotes disponiveis para este filtro. Considere criar um novo pacote.',
+      );
     }
 
     const exactWhere: Prisma.PacoteViagemWhereInput = {
@@ -731,16 +614,13 @@ export class PacotesService {
         ...pagination,
       });
 
-      return {
-        modo: 'EXATO',
-        pacotes: await this.attachOrganizerPublicRatings(pacotes),
-        pagination: {
-          page,
-          pageSize,
-          total: exactTotal,
-          totalPages: Math.max(1, Math.ceil(exactTotal / pageSize)),
-        },
-      };
+      return buildSearchResponse(
+        'EXATO',
+        page,
+        pageSize,
+        exactTotal,
+        await this.attachOrganizerPublicRatings(pacotes),
+      );
     }
 
     const overlapWhere: Prisma.PacoteViagemWhereInput = {
@@ -757,29 +637,23 @@ export class PacotesService {
         ...pagination,
       });
 
-      return {
-        modo: 'INTERSECCAO',
-        mensagem: 'Nao ha pacotes no periodo exato, mostrando datas proximas.',
-        pacotes: await this.attachOrganizerPublicRatings(pacotes),
-        pagination: {
-          page,
-          pageSize,
-          total: overlapTotal,
-          totalPages: Math.max(1, Math.ceil(overlapTotal / pageSize)),
-        },
-      };
-    }
-
-    return {
-      modo: 'SEM_RESULTADOS',
-      mensagem: 'Nao ha pacotes disponiveis para este filtro. Considere criar um novo pacote.',
-      pacotes: [],
-      pagination: {
+      return buildSearchResponse(
+        'INTERSECCAO',
         page,
         pageSize,
-        total: 0,
-        totalPages: 1,
-      },
-    };
+        overlapTotal,
+        await this.attachOrganizerPublicRatings(pacotes),
+        'Nao ha pacotes no periodo exato, mostrando datas proximas.',
+      );
+    }
+
+    return buildSearchResponse(
+      'SEM_RESULTADOS',
+      page,
+      pageSize,
+      0,
+      [],
+      'Nao ha pacotes disponiveis para este filtro. Considere criar um novo pacote.',
+    );
   }
 }

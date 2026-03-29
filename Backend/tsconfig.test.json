@@ -8,7 +8,7 @@
     "incremental": false
   },
   "include": [
-    "src/pacotes/pacotes.utils.ts",
+    "src/**/*.ts",
     "test/**/*.ts"
   ]
 }
