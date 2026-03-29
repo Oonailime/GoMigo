@@ -108,6 +108,20 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+.readItem {
+  color: color-mix(in srgb, var(--text) 56%, transparent);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.readItem strong,
+.readItem span {
+  color: inherit;
+}
+
+.readItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 :global(:root[data-theme="light"]) .trigger {
   background: rgba(17, 33, 49, 0.06);
 }
@@ -120,6 +134,14 @@
 :global(:root[data-theme="light"]) .item:hover,
 :global(:root[data-theme="light"]) .itemButton:hover {
   background: rgba(17, 33, 49, 0.08);
+}
+
+:global(:root[data-theme="light"]) .readItem {
+  background: rgba(17, 33, 49, 0.025);
+}
+
+:global(:root[data-theme="light"]) .readItem:hover {
+  background: rgba(17, 33, 49, 0.05);
 }
 
 .empty {

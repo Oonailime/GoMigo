@@ -17,6 +17,8 @@ type NotificationPayload = {
   totalAvaliacoes: number;
   organizerNotifications: Array<{
     id: number;
+    statusSolicitacao: string;
+    motivoRecusa?: string | null;
     user: { name?: string | null; email: string };
     pacoteViagem: { id: number; titulo: string };
   }>;
@@ -35,13 +37,20 @@ type NotificationPayload = {
   }>;
 };
 
-const DISMISSED_NOTIFICATIONS_KEY = "gomigo_dismissed_notifications";
+type NotificationId = string;
+
+type NotificationViewData = NotificationPayload & {
+  unreadTotal: number;
+  readIds: NotificationId[];
+};
+
+const READ_NOTIFICATIONS_KEY = "gomigo_read_notifications";
 
 export function NotificationBell() {
   const router = useRouter();
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
-  const [data, setData] = useState<NotificationPayload | null>(null);
+  const [data, setData] = useState<NotificationViewData | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useDismissibleLayer({
@@ -72,25 +81,13 @@ export function NotificationBell() {
         }
 
         const payload = (await response.json()) as NotificationPayload;
-        const dismissed = readDismissedNotifications();
-        const visibleTravelerNotifications = payload.travelerNotifications.filter(
-          (item) => !dismissed.includes(`traveler:${item.id}`),
-        );
-        const visibleEvaluationNotifications = payload.evaluationNotifications.filter(
-          (item) => !dismissed.includes(`evaluation:${item.id}`),
-        );
+        const readIds = readReadNotifications();
 
         if (active) {
           setData({
             ...payload,
-            travelerNotifications: visibleTravelerNotifications,
-            evaluationNotifications: visibleEvaluationNotifications,
-            totalRespostas: visibleTravelerNotifications.length,
-            totalAvaliacoes: visibleEvaluationNotifications.length,
-            total:
-              payload.totalPendentes +
-              visibleTravelerNotifications.length +
-              visibleEvaluationNotifications.length,
+            readIds,
+            unreadTotal: countUnreadNotifications(payload, readIds),
           });
         }
       } catch {}
@@ -123,7 +120,7 @@ export function NotificationBell() {
         <span className={styles.icon} aria-hidden="true">
           Avisos
         </span>
-        {data?.total ? <span className={styles.badge}>{data.total}</span> : null}
+        {data?.unreadTotal ? <span className={styles.badge}>{data.unreadTotal}</span> : null}
       </button>
 
       {isOpen ? (
@@ -131,89 +128,117 @@ export function NotificationBell() {
           <div className={styles.header}>
             <strong>Notificacoes</strong>
             <span className={styles.counter}>
-              {data?.totalPendentes ?? 0} pendentes
+              {data?.unreadTotal ?? 0} nao lidas
             </span>
           </div>
 
-          {!data || data.total === 0 ? (
+          {!data || getNotificationCount(data) === 0 ? (
             <p className={styles.empty}>Nenhuma notificacao no momento.</p>
           ) : (
             <div className={styles.list}>
-              {data.organizerNotifications.map((item) => (
-                <Link
-                  key={`organizer-${item.id}`}
-                  href="/travel-package"
-                  className={styles.item}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <strong>{item.user.name || item.user.email}</strong> solicitou entrar em{" "}
-                  <span>{item.pacoteViagem.titulo}</span>
-                </Link>
-              ))}
+              {data.organizerNotifications.map((item) => {
+                const notificationId = getOrganizerNotificationId(item.id);
+                const isRead = data.readIds.includes(notificationId);
+                const organizerMessage =
+                  item.statusSolicitacao === "PENDENTE"
+                    ? (
+                        <>
+                          <strong>{item.user.name || item.user.email}</strong> solicitou entrar em{" "}
+                          <span>{item.pacoteViagem.titulo}</span>
+                        </>
+                      )
+                    : item.statusSolicitacao === "ACEITA"
+                      ? (
+                          <>
+                            Voce aceitou <strong>{item.user.name || item.user.email}</strong> em{" "}
+                            <span>{item.pacoteViagem.titulo}</span>
+                          </>
+                        )
+                      : (
+                          <>
+                            Voce rejeitou <strong>{item.user.name || item.user.email}</strong> em{" "}
+                            <span>{item.pacoteViagem.titulo}</span>
+                          </>
+                        );
 
-              {data.travelerNotifications.map((item) => (
-                <button
-                  key={`traveler-${item.id}`}
-                  type="button"
-                  className={styles.itemButton}
-                  onClick={() => {
-                    dismissNotification(`traveler:${item.id}`);
-                    setData((current) =>
-                      current
-                        ? {
-                            ...current,
-                            travelerNotifications: current.travelerNotifications.filter(
-                              (notification) => notification.id !== item.id,
-                            ),
-                            totalRespostas: Math.max(0, current.totalRespostas - 1),
-                            total: Math.max(0, current.total - 1),
-                          }
-                        : current,
-                    );
-                    setIsOpen(false);
+                return (
+                  <Link
+                    key={notificationId}
+                    href="/travel-package"
+                    className={getNotificationClassName(styles.item, styles.readItem, isRead)}
+                    onClick={() => {
+                      setData((current) =>
+                        current ? markNotificationAsRead(current, notificationId) : current,
+                      );
+                      setIsOpen(false);
+                    }}
+                  >
+                    {organizerMessage}
+                  </Link>
+                );
+              })}
 
-                    if (item.statusSolicitacao === "ACEITA") {
-                      router.push(`/my-trips/${item.pacoteViagem.id}`);
-                    }
-                  }}
-                >
-                  Sua solicitacao para <strong>{item.pacoteViagem.titulo}</strong> foi{" "}
-                  {item.statusSolicitacao === "ACEITA" ? "aceita" : "rejeitada"}
-                </button>
-              ))}
+              {data.travelerNotifications.map((item) => {
+                const notificationId = getTravelerNotificationId(item.id);
+                const isRead = data.readIds.includes(notificationId);
 
-              {data.evaluationNotifications.map((item) => (
-                <button
-                  key={`evaluation-${item.id}`}
-                  type="button"
-                  className={styles.itemButton}
-                  onClick={() => {
-                    dismissNotification(`evaluation:${item.id}`);
-                    setData((current) =>
-                      current
-                        ? {
-                            ...current,
-                            evaluationNotifications: current.evaluationNotifications.filter(
-                              (notification) => notification.id !== item.id,
-                            ),
-                            totalAvaliacoes: Math.max(0, current.totalAvaliacoes - 1),
-                            total: Math.max(0, current.total - 1),
-                          }
-                        : current,
-                    );
-                    setIsOpen(false);
-                    router.push("/profile");
-                  }}
-                >
-                  <strong>{item.autor.name || item.autor.email}</strong> avaliou voce com nota{" "}
-                  <strong>{item.nota}</strong>
-                  {item.pacoteViagem ? (
-                    <>
-                      {" "}em <span>{item.pacoteViagem.titulo}</span>
-                    </>
-                  ) : null}
-                </button>
-              ))}
+                return (
+                  <button
+                    key={notificationId}
+                    type="button"
+                    className={getNotificationClassName(
+                      styles.itemButton,
+                      styles.readItem,
+                      isRead,
+                    )}
+                    onClick={() => {
+                      setData((current) =>
+                        current ? markNotificationAsRead(current, notificationId) : current,
+                      );
+                      setIsOpen(false);
+
+                      if (item.statusSolicitacao === "ACEITA") {
+                        router.push(`/my-trips/${item.pacoteViagem.id}`);
+                      }
+                    }}
+                  >
+                    Sua solicitacao para <strong>{item.pacoteViagem.titulo}</strong> foi{" "}
+                    {item.statusSolicitacao === "ACEITA" ? "aceita" : "rejeitada"}
+                  </button>
+                );
+              })}
+
+              {data.evaluationNotifications.map((item) => {
+                const notificationId = getEvaluationNotificationId(item.id);
+                const isRead = data.readIds.includes(notificationId);
+
+                return (
+                  <button
+                    key={notificationId}
+                    type="button"
+                    className={getNotificationClassName(
+                      styles.itemButton,
+                      styles.readItem,
+                      isRead,
+                    )}
+                    onClick={() => {
+                      setData((current) =>
+                        current ? markNotificationAsRead(current, notificationId) : current,
+                      );
+                      setIsOpen(false);
+                      router.push("/profile");
+                    }}
+                  >
+                    <strong>{item.autor.name || item.autor.email}</strong> avaliou voce com nota{" "}
+                    <strong>{item.nota}</strong>
+                    {item.pacoteViagem ? (
+                      <>
+                        {" "}em <span>{item.pacoteViagem.titulo}</span>
+                      </>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -222,13 +247,47 @@ export function NotificationBell() {
   );
 }
 
-function readDismissedNotifications() {
+function getOrganizerNotificationId(id: number) {
+  return `organizer:${id}`;
+}
+
+function getTravelerNotificationId(id: number) {
+  return `traveler:${id}`;
+}
+
+function getEvaluationNotificationId(id: number) {
+  return `evaluation:${id}`;
+}
+
+function getNotificationCount(data: NotificationPayload) {
+  return (
+    data.organizerNotifications.length +
+    data.travelerNotifications.length +
+    data.evaluationNotifications.length
+  );
+}
+
+function countUnreadNotifications(data: NotificationPayload, readIds: NotificationId[]) {
+  return (
+    data.organizerNotifications.filter(
+      (item) => !readIds.includes(getOrganizerNotificationId(item.id)),
+    ).length +
+    data.travelerNotifications.filter(
+      (item) => !readIds.includes(getTravelerNotificationId(item.id)),
+    ).length +
+    data.evaluationNotifications.filter(
+      (item) => !readIds.includes(getEvaluationNotificationId(item.id)),
+    ).length
+  );
+}
+
+function readReadNotifications() {
   if (typeof window === "undefined") {
     return [] as string[];
   }
 
   try {
-    const raw = window.localStorage.getItem(DISMISSED_NOTIFICATIONS_KEY);
+    const raw = window.localStorage.getItem(READ_NOTIFICATIONS_KEY);
     if (!raw) {
       return [] as string[];
     }
@@ -239,18 +298,32 @@ function readDismissedNotifications() {
   }
 }
 
-function dismissNotification(id: string) {
+function writeReadNotifications(readIds: NotificationId[]) {
   if (typeof window === "undefined") {
     return;
   }
 
-  const current = readDismissedNotifications();
-  if (current.includes(id)) {
-    return;
+  window.localStorage.setItem(READ_NOTIFICATIONS_KEY, JSON.stringify(readIds));
+}
+
+function markNotificationAsRead(
+  current: NotificationViewData,
+  notificationId: NotificationId,
+) {
+  if (current.readIds.includes(notificationId)) {
+    return current;
   }
 
-  window.localStorage.setItem(
-    DISMISSED_NOTIFICATIONS_KEY,
-    JSON.stringify([...current, id]),
-  );
+  const nextReadIds = [...current.readIds, notificationId];
+  writeReadNotifications(nextReadIds);
+
+  return {
+    ...current,
+    readIds: nextReadIds,
+    unreadTotal: countUnreadNotifications(current, nextReadIds),
+  };
+}
+
+function getNotificationClassName(baseClassName: string, readClassName: string, isRead: boolean) {
+  return isRead ? `${baseClassName} ${readClassName}` : baseClassName;
 }
