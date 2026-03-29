@@ -4,12 +4,8 @@ import { auth } from "@/auth";
 import { MyTripsHeaderActions } from "../../components/my-trips-header-actions";
 import { TripCancelActions } from "./trip-cancel-actions";
 import { TripEvaluationPanel } from "./trip-evaluation-panel";
+import { fetchServerBackend } from "../../lib/backend";
 import styles from "./trip-details.module.css";
-
-const backendUrl =
-  process.env.BACKEND_URL ??
-  process.env.NEXT_PUBLIC_BACKEND_URL ??
-  "http://localhost:3001/api";
 
 type TripDetails = {
   id: number;
@@ -62,10 +58,8 @@ export default async function MyTripDetailsPage({
     redirect("/complete-profile");
   }
 
-  const response = await fetch(`${backendUrl}/pacotes/${resolvedParams.id}/detalhes`, {
-    headers: {
-      Authorization: `Bearer ${session.backendAccessToken}`,
-    },
+  const response = await fetchServerBackend(`/pacotes/${resolvedParams.id}/detalhes`, {
+    token: session.backendAccessToken,
     cache: "no-store",
   });
 

@@ -1,6 +1,49 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import styles from "../page.module.css";
-import { TravelPlannerForm } from "./travel-planner-form";
+
+const TravelPlannerForm = dynamic(
+  () => import("./travel-planner-form").then((mod) => mod.TravelPlannerForm),
+  {
+    loading: () => (
+      <div className={styles.panelSection}>
+        <div className={styles.panelHeader}>
+          <div>
+            <p className={styles.eyebrow}>Acesso rapido</p>
+            <h2 className={styles.panelTitle}>Comece sua proxima viagem</h2>
+          </div>
+        </div>
+
+        <div className={styles.travelForm} aria-busy="true">
+          <div className={styles.formColumn}>
+            <div className={styles.fieldGroup}>
+              <span className={styles.fieldLabel}>Cidade de partida</span>
+              <div className={styles.textInput}>Carregando campo...</div>
+            </div>
+          </div>
+          <div className={styles.formColumn}>
+            <div className={styles.fieldGroup}>
+              <span className={styles.fieldLabel}>Destino principal</span>
+              <div className={styles.textInput}>Carregando campo...</div>
+            </div>
+          </div>
+          <div className={styles.formColumn}>
+            <div className={styles.fieldGroup}>
+              <span className={styles.fieldLabel}>Modo da viagem</span>
+              <div className={styles.textInput}>Carregando campo...</div>
+            </div>
+          </div>
+          <div className={styles.formFullWidth}>
+            <div className={styles.fieldGroup}>
+              <span className={styles.fieldLabel}>Periodo da viagem</span>
+              <div className={styles.textInput}>Carregando calendario...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+);
 
 export function TravelLandingPage() {
   return (

@@ -1,22 +1,37 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateAnuncioDto } from './dto/create-anuncio.dto';
+import { UpdateAnuncioDto } from './dto/update-anuncio.dto';
 
 @Injectable()
 export class AnunciosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: {
-    idPacoteViagem: number;
-    idOrganizador: number;
-    tituloAnuncio: string;
-    descricaoAnuncio?: string;
-    statusAnuncio: string;
-    orcamento?: number;
-    dataInicio?: Date;
-    dataFim?: Date;
-  }) {
-    return this.prisma.anuncioPacote.create({ data });
+  async create(idOrganizador: number, data: CreateAnuncioDto) {
+    if (!idOrganizador || Number.isNaN(idOrganizador)) {
+      throw new BadRequestException('idOrganizador invalido');
+    }
+
+    const pacote = await this.prisma.pacoteViagem.findUnique({
+      where: { id: data.idPacoteViagem },
+      select: { id: true, idOrganizador: true },
+    });
+
+    if (!pacote) {
+      throw new NotFoundException('pacote nao encontrado');
+    }
+
+    if (pacote.idOrganizador !== idOrganizador) {
+      throw new ForbiddenException('somente o organizador pode criar anuncios para este pacote');
+    }
+
+    return this.prisma.anuncioPacote.create({
+      data: {
+        ...data,
+        idOrganizador,
+      },
+    });
   }
 
   async findAll() {
@@ -37,18 +52,29 @@ export class AnunciosService {
   }
 
   async update(
+    idOrganizador: number,
     id: number,
-    data: Partial<{
-      tituloAnuncio: string;
-      descricaoAnuncio?: string;
-      statusAnuncio: string;
-      orcamento?: number;
-      dataInicio?: Date;
-      dataFim?: Date;
-    }>,
+    data: UpdateAnuncioDto,
   ) {
+    if (!idOrganizador || Number.isNaN(idOrganizador)) {
+      throw new BadRequestException('idOrganizador invalido');
+    }
+
     if (!id || Number.isNaN(id)) {
       throw new BadRequestException('id invalido');
+    }
+
+    const anuncio = await this.prisma.anuncioPacote.findUnique({
+      where: { id },
+      select: { id: true, idOrganizador: true },
+    });
+
+    if (!anuncio) {
+      throw new NotFoundException('anuncio nao encontrado');
+    }
+
+    if (anuncio.idOrganizador !== idOrganizador) {
+      throw new ForbiddenException('somente o organizador do anuncio pode altera-lo');
     }
 
     try {
@@ -61,9 +87,26 @@ export class AnunciosService {
     }
   }
 
-  async delete(id: number) {
+  async delete(idOrganizador: number, id: number) {
+    if (!idOrganizador || Number.isNaN(idOrganizador)) {
+      throw new BadRequestException('idOrganizador invalido');
+    }
+
     if (!id || Number.isNaN(id)) {
       throw new BadRequestException('id invalido');
+    }
+
+    const anuncio = await this.prisma.anuncioPacote.findUnique({
+      where: { id },
+      select: { id: true, idOrganizador: true },
+    });
+
+    if (!anuncio) {
+      throw new NotFoundException('anuncio nao encontrado');
+    }
+
+    if (anuncio.idOrganizador !== idOrganizador) {
+      throw new ForbiddenException('somente o organizador do anuncio pode exclui-lo');
     }
 
     try {

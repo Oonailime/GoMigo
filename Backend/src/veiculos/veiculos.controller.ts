@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { CreateVeiculoDto } from './dto/create-veiculo.dto';
 import { UpdateVeiculoDto } from './dto/update-veiculo.dto';
+import { CurrentUserId } from '../auth/current-user-id.decorator';
 import { VeiculosService } from './veiculos.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 
@@ -11,14 +12,10 @@ export class VeiculosController {
 
   @Post()
   create(
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
     @Body() body: CreateVeiculoDto,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.veiculosService.createForOwner(req.user.sub, {
+    return this.veiculosService.createForOwner(userId, {
       marca: body.marca,
       modelo: body.modelo,
       cor: body.cor,
@@ -29,48 +26,32 @@ export class VeiculosController {
   }
 
   @Get()
-  findAll(@Req() req: { user: { sub: number | null } }) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.veiculosService.findByOwner(req.user.sub);
+  findAll(@CurrentUserId() userId: number) {
+    return this.veiculosService.findByOwner(userId);
   }
 
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.veiculosService.findOneForOwner(id, req.user.sub);
+    return this.veiculosService.findOneForOwner(id, userId);
   }
 
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
     @Body() body: UpdateVeiculoDto,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.veiculosService.updateForOwner(id, req.user.sub, body);
+    return this.veiculosService.updateForOwner(id, userId, body);
   }
 
   @Delete(':id')
   delete(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.veiculosService.deleteForOwner(id, req.user.sub);
+    return this.veiculosService.deleteForOwner(id, userId);
   }
 }

@@ -3,27 +3,14 @@ import { Prisma, TipoPacoteViagem } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpsertRoteiroDto } from './dto/upsert-roteiro.dto';
 import { SearchPacotesDto } from './dto/search-pacotes.dto';
+import { createAddressData, formatCityLabel } from './pacotes.utils';
 
 @Injectable()
 export class PacotesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private createAddressData(value?: string) {
-    if (!value?.trim()) {
-      return null;
-    }
-
-    const [cidadePart, estadoPart] = value.split(' - ');
-    return {
-      rua: 'Nao informado',
-      cep: '00000000',
-      cidade: cidadePart?.trim() || value.trim(),
-      estado: estadoPart?.trim() || 'Nao informado',
-    };
-  }
-
   private async getOrCreateEnderecoId(tx: Prisma.TransactionClient, value?: string) {
-    const data = this.createAddressData(value);
+    const data = createAddressData(value);
     if (!data) {
       return null;
     }
@@ -795,16 +782,4 @@ export class PacotesService {
       },
     };
   }
-}
-
-function formatCityLabel(value?: { cidade?: string | null; estado?: string | null } | null) {
-  if (!value?.cidade) {
-    return 'Local a definir';
-  }
-
-  if (!value.estado || value.estado === 'Nao informado') {
-    return value.cidade;
-  }
-
-  return `${value.cidade} - ${value.estado}`;
 }

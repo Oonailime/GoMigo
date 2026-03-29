@@ -4,12 +4,8 @@ import { auth } from "@/auth";
 import { MyTripsHeaderActions } from "../../../components/my-trips-header-actions";
 import { ItineraryPageClient } from "./itinerary-page-client";
 import type { TripItineraryPayload } from "../../../components/trip-itinerary-editor";
+import { fetchServerBackend } from "../../../lib/backend";
 import styles from "./roteiro.module.css";
-
-const backendUrl =
-  process.env.BACKEND_URL ??
-  process.env.NEXT_PUBLIC_BACKEND_URL ??
-  "http://localhost:3001/api";
 
 type TripSummary = {
   id: number;
@@ -38,16 +34,12 @@ export default async function TripItineraryPage({
   }
 
   const [tripResponse, itineraryResponse] = await Promise.all([
-    fetch(`${backendUrl}/pacotes/${resolvedParams.id}/detalhes`, {
-      headers: {
-        Authorization: `Bearer ${session.backendAccessToken}`,
-      },
+    fetchServerBackend(`/pacotes/${resolvedParams.id}/detalhes`, {
+      token: session.backendAccessToken,
       cache: "no-store",
     }),
-    fetch(`${backendUrl}/pacotes/${resolvedParams.id}/roteiro`, {
-      headers: {
-        Authorization: `Bearer ${session.backendAccessToken}`,
-      },
+    fetchServerBackend(`/pacotes/${resolvedParams.id}/roteiro`, {
+      token: session.backendAccessToken,
       cache: "no-store",
     }),
   ]);

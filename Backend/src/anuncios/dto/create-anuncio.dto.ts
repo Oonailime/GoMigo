@@ -6,10 +6,6 @@ export class CreateAnuncioDto {
   @IsInt()
   idPacoteViagem: number;
 
-  @Type(() => Number)
-  @IsInt()
-  idOrganizador: number;
-
   @IsString()
   @IsNotEmpty()
   tituloAnuncio: string;

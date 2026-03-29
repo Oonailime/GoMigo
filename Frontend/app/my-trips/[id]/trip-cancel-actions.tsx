@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import {
+  fetchBackend,
+  readApiErrorMessage,
+} from "../../lib/backend";
 import styles from "./trip-details.module.css";
-
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
 
 type TripCancelActionsProps = {
   packageId: number;
@@ -46,7 +47,9 @@ export function TripCancelActions({
       : "Ao cancelar sua reserva, voce deixa de participar desta viagem.";
 
   const handleCancel = async () => {
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setError("Sua sessao nao possui token do backend.");
       return;
     }
@@ -59,26 +62,18 @@ export function TripCancelActions({
     setError(null);
 
     try {
-      const response = await fetch(
+      const response = await fetchBackend(
         resolvedIsOrganizer
-          ? `${backendUrl}/pacotes/${packageId}`
-          : `${backendUrl}/pacotes/${packageId}/reserva`,
+          ? `/pacotes/${packageId}`
+          : `/pacotes/${packageId}/reserva`,
         {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${session.backendAccessToken}`,
-          },
+          token: backendAccessToken,
         },
       );
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as
-          | { message?: string | string[] }
-          | null;
-        const message = Array.isArray(data?.message)
-          ? data.message.join(", ")
-          : data?.message;
-        setError(message ?? "Nao foi possivel concluir o cancelamento.");
+        setError(await readApiErrorMessage(response, "Nao foi possivel concluir o cancelamento."));
         return;
       }
 

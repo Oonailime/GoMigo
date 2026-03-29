@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import {
+  fetchBackendJson,
+  readApiErrorMessage,
+} from "../lib/backend";
 import styles from "../profile/profile.module.css";
-
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
 
 type ProfileData = {
   id: number;
@@ -45,7 +46,9 @@ export function ProfileClientPage() {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setError("Sua sessao nao possui token do backend.");
       setStatus("error");
       return;
@@ -58,29 +61,18 @@ export function ProfileClientPage() {
       setError(null);
 
       try {
-        const response = await fetch(`${backendUrl}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${session.backendAccessToken}`,
-          },
+        const { response, data } = await fetchBackendJson<ProfileData>("/auth/me", {
+          token: backendAccessToken,
           cache: "no-store",
         });
 
         if (!response.ok) {
-          const data = (await response.json().catch(() => null)) as
-            | { message?: string | string[] }
-            | null;
-          const message = Array.isArray(data?.message)
-            ? data.message.join(", ")
-            : data?.message;
-
           if (active) {
-            setError(message ?? "Falha ao carregar o perfil.");
+            setError(await readApiErrorMessage(response, "Falha ao carregar o perfil."));
             setStatus("error");
           }
           return;
         }
-
-        const data = (await response.json()) as ProfileData;
 
         if (active) {
           setProfile(data);

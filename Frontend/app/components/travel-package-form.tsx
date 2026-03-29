@@ -11,10 +11,12 @@ import {
   TripItineraryEditor,
   type TripItineraryDraft,
 } from "./trip-itinerary-editor";
+import {
+  fetchBackend,
+  fetchBackendJson,
+  readApiErrorMessage,
+} from "../lib/backend";
 import styles from "./travel-package-form.module.css";
-
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
 
 type TravelPackageFormState = {
   title: string;
@@ -104,7 +106,9 @@ export function TravelPackageForm({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setError("Sua sessao nao possui token do backend. Entre novamente.");
       return;
     }
@@ -119,32 +123,32 @@ export function TravelPackageForm({
     setSuccessMessage(null);
 
     try {
-      const [originResponse, destinationResponse] = await Promise.all([
-        fetch(`${backendUrl}/enderecos`, {
+      const [
+        { response: originResponse, data: originAddress },
+        { response: destinationResponse, data: destinationAddress },
+      ] = await Promise.all([
+        fetchBackendJson<{ id: number }>("/enderecos", {
           method: "POST",
+          token: backendAccessToken,
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${session.backendAccessToken}`,
           },
-          body: JSON.stringify(createAddressPayload(formState.origin)),
+          json: createAddressPayload(formState.origin),
         }),
-        fetch(`${backendUrl}/enderecos`, {
+        fetchBackendJson<{ id: number }>("/enderecos", {
           method: "POST",
+          token: backendAccessToken,
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${session.backendAccessToken}`,
           },
-          body: JSON.stringify(createAddressPayload(formState.destination)),
+          json: createAddressPayload(formState.destination),
         }),
       ]);
 
-      if (!originResponse.ok || !destinationResponse.ok) {
+      if (!originResponse.ok || !destinationResponse.ok || !originAddress || !destinationAddress) {
         setError("Nao foi possivel cadastrar os enderecos do pacote.");
         return;
       }
-
-      const originAddress = (await originResponse.json()) as { id: number };
-      const destinationAddress = (await destinationResponse.json()) as { id: number };
 
       const payload = {
         idEnderecoPartida: originAddress.id,
@@ -161,27 +165,20 @@ export function TravelPackageForm({
         privacidade: editPackageId ? undefined : formState.privacy,
       };
 
-      const packageResponse = await fetch(
-        `${backendUrl}/pacotes${editPackageId ? `/${editPackageId}` : ""}`,
+      const packageResponse = await fetchBackend(
+        `/pacotes${editPackageId ? `/${editPackageId}` : ""}`,
         {
           method: editPackageId ? "PATCH" : "POST",
+          token: backendAccessToken,
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${session.backendAccessToken}`,
           },
-          body: JSON.stringify(payload),
+          json: payload,
         },
       );
 
       if (!packageResponse.ok) {
-        const data = (await packageResponse.json().catch(() => null)) as
-          | { message?: string | string[] }
-          | null;
-        const message = Array.isArray(data?.message)
-          ? data.message.join(", ")
-          : data?.message;
-
-        setError(message ?? "Nao foi possivel publicar o pacote.");
+        setError(await readApiErrorMessage(packageResponse, "Nao foi possivel publicar o pacote."));
         return;
       }
 
@@ -196,26 +193,25 @@ export function TravelPackageForm({
           Boolean(itineraryPayload.descricao);
 
         if (hasInitialItinerary) {
-          const itineraryResponse = await fetch(
-            `${backendUrl}/pacotes/${savedPackage.id}/roteiro`,
+          const itineraryResponse = await fetchBackend(
+            `/pacotes/${savedPackage.id}/roteiro`,
             {
               method: "PUT",
+              token: backendAccessToken,
               headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${session.backendAccessToken}`,
               },
-              body: JSON.stringify(itineraryPayload),
+              json: itineraryPayload,
             },
           );
 
           if (!itineraryResponse.ok) {
-            const data = (await itineraryResponse.json().catch(() => null)) as
-              | { message?: string | string[] }
-              | null;
-            const message = Array.isArray(data?.message)
-              ? data.message.join(", ")
-              : data?.message;
-            setError(message ?? "Pacote criado, mas nao foi possivel salvar o roteiro inicial.");
+            setError(
+              await readApiErrorMessage(
+                itineraryResponse,
+                "Pacote criado, mas nao foi possivel salvar o roteiro inicial.",
+              ),
+            );
             return;
           }
         }

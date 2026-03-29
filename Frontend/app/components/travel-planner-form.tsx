@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../page.module.css";
@@ -8,19 +9,36 @@ import {
   writeSearchDraft,
 } from "../data/search-storage";
 import { BRAZILIAN_TRIP_MODES } from "../data/trip-modes";
-import { CityAutocomplete } from "./city-autocomplete";
-import { NotificationBell } from "./notification-bell";
-import { SocialLoginButtons } from "./social-login-buttons";
-import { ThemeToggle } from "./theme-toggle";
-import { TripModeSelect } from "./trip-mode-select";
 import { useThemeMode } from "./use-theme-mode";
-import { UserMenu } from "./user-menu";
-import dynamic from "next/dynamic";
 
 const LANDING_TRIP_MODES = [
   { value: "TODOS", label: "Todos os formatos" },
   ...BRAZILIAN_TRIP_MODES,
 ];
+
+const CityAutocomplete = dynamic(
+  () => import("./city-autocomplete").then((mod) => mod.CityAutocomplete),
+  {
+    loading: () => (
+      <div className={styles.fieldGroup} aria-busy="true">
+        <span className={styles.fieldLabel}>Carregando campo</span>
+        <div className={styles.textInput}>Preparando busca de cidades...</div>
+      </div>
+    ),
+  },
+);
+
+const TripModeSelect = dynamic(
+  () => import("./trip-mode-select").then((mod) => mod.TripModeSelect),
+  {
+    loading: () => (
+      <div className={styles.fieldGroup} aria-busy="true">
+        <span className={styles.fieldLabel}>Modo da viagem</span>
+        <div className={styles.textInput}>Carregando opcoes...</div>
+      </div>
+    ),
+  },
+);
 
 const DateRangeField = dynamic(
   () => import("./date-range-field").then((mod) => mod.DateRangeField),
@@ -50,6 +68,36 @@ const DateRangeField = dynamic(
         <span className={styles.fieldHint}>
           Carregando calendario da viagem.
         </span>
+      </div>
+    ),
+  },
+);
+
+const ThemeToggle = dynamic(
+  () => import("./theme-toggle").then((mod) => mod.ThemeToggle),
+  {
+    ssr: false,
+  },
+);
+
+const NotificationBell = dynamic(
+  () => import("./notification-bell").then((mod) => mod.NotificationBell),
+  {
+    ssr: false,
+  },
+);
+
+const UserMenu = dynamic(() => import("./user-menu").then((mod) => mod.UserMenu), {
+  ssr: false,
+});
+
+const SocialLoginButtons = dynamic(
+  () => import("./social-login-buttons").then((mod) => mod.SocialLoginButtons),
+  {
+    ssr: false,
+    loading: () => (
+      <div className={styles.formFullWidth} aria-busy="true">
+        <div className={styles.buttonSecondary}>Carregando acesso...</div>
       </div>
     ),
   },

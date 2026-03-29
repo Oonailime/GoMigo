@@ -18,14 +18,17 @@ import { ThemeToggle } from "../components/theme-toggle";
 import { TripModeSelect } from "../components/trip-mode-select";
 import { useThemeMode } from "../components/use-theme-mode";
 import { UserMenu } from "../components/user-menu";
+import {
+  fetchBackend,
+  fetchBackendJson,
+  readApiErrorMessage,
+} from "../lib/backend";
 import styles from "./search.module.css";
 
 const DateRangeField = dynamic(
   () => import("../components/date-range-field").then((mod) => mod.DateRangeField),
   { ssr: false },
 );
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
 
 const PAGE_SIZE = 12;
 const SEARCH_MODE_OPTIONS = [
@@ -108,7 +111,9 @@ export default function SearchPage() {
       return;
     }
 
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setCurrentUserId(null);
       return;
     }
@@ -117,10 +122,8 @@ export default function SearchPage() {
 
     const loadCurrentUser = async () => {
       try {
-        const response = await fetch(`${backendUrl}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${session.backendAccessToken}`,
-          },
+        const { response, data } = await fetchBackendJson<{ id: number }>("/auth/me", {
+          token: backendAccessToken,
           cache: "no-store",
         });
 
@@ -128,10 +131,8 @@ export default function SearchPage() {
           return;
         }
 
-        const data = (await response.json()) as { id: number };
-
         if (active) {
-          setCurrentUserId(data.id);
+          setCurrentUserId(data?.id ?? null);
         }
       } catch {}
     };
@@ -144,7 +145,9 @@ export default function SearchPage() {
   }, [session?.backendAccessToken, session?.backendUserId]);
 
   useEffect(() => {
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setMyRequests({});
       return;
     }
@@ -153,10 +156,13 @@ export default function SearchPage() {
 
     const loadRequests = async () => {
       try {
-        const response = await fetch(`${backendUrl}/solicitacoes/minhas`, {
-          headers: {
-            Authorization: `Bearer ${session.backendAccessToken}`,
-          },
+        const { response, data } = await fetchBackendJson<
+          Array<{
+            idPacoteViagem: number;
+            statusSolicitacao: string;
+          }>
+        >("/solicitacoes/minhas", {
+          token: backendAccessToken,
           cache: "no-store",
         });
 
@@ -164,16 +170,11 @@ export default function SearchPage() {
           return;
         }
 
-        const data = (await response.json()) as Array<{
-          idPacoteViagem: number;
-          statusSolicitacao: string;
-        }>;
-
         if (!active) {
           return;
         }
 
-        const latestRequestByPackage = data.reduce<Record<number, string>>(
+        const latestRequestByPackage = (data ?? []).reduce<Record<number, string>>(
           (accumulator, item) => {
             if (!(item.idPacoteViagem in accumulator)) {
               accumulator[item.idPacoteViagem] = item.statusSolicitacao;
@@ -284,15 +285,8 @@ export default function SearchPage() {
         });
 
         if (!response.ok) {
-          const data = (await response.json().catch(() => null)) as
-            | { message?: string | string[] }
-            | null;
-          const responseMessage = Array.isArray(data?.message)
-            ? data.message.join(", ")
-            : data?.message;
-
           setStatus("error");
-          setError(responseMessage ?? "Nao foi possivel carregar os pacotes.");
+          setError(await readApiErrorMessage(response, "Nao foi possivel carregar os pacotes."));
           return;
         }
 
@@ -372,15 +366,15 @@ export default function SearchPage() {
 
   const handleRequestParticipation = async (packageId: number) => {
     const sendParticipationRequest = async (accessToken: string) =>
-      fetch(`${backendUrl}/solicitacoes/pacote/${packageId}`, {
+      fetchBackend(`/solicitacoes/pacote/${packageId}`, {
         method: "POST",
+        token: accessToken,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
+        json: {
           mensagemSolicitacao: requestMessages[packageId]?.trim() || undefined,
-        }),
+        },
       });
 
     if (!session?.backendAccessToken) {

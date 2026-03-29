@@ -3,10 +3,12 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import {
+  fetchBackend,
+  fetchBackendJson,
+  readApiErrorMessage,
+} from "../lib/backend";
 import styles from "./profile-details-form.module.css";
-
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
 
 type ProfileDetailsFormData = {
   sobreMim?: string | null;
@@ -29,7 +31,9 @@ export function ProfileDetailsForm() {
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setError("Sua sessao nao possui token do backend.");
       setStatus("ready");
       return;
@@ -42,10 +46,8 @@ export function ProfileDetailsForm() {
       setError(null);
 
       try {
-        const response = await fetch(`${backendUrl}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${session.backendAccessToken}`,
-          },
+        const { response, data } = await fetchBackendJson<ProfileDetailsFormData>("/auth/me", {
+          token: backendAccessToken,
           cache: "no-store",
         });
 
@@ -53,16 +55,15 @@ export function ProfileDetailsForm() {
           throw new Error();
         }
 
-        const data = (await response.json()) as ProfileDetailsFormData;
         if (!active) {
           return;
         }
 
         setForm({
-          sobreMim: data.sobreMim ?? "",
-          personalidade: data.personalidade ?? "",
-          experienciaViagem: data.experienciaViagem ?? "",
-          gostaDeFazer: data.gostaDeFazer ?? "",
+          sobreMim: data?.sobreMim ?? "",
+          personalidade: data?.personalidade ?? "",
+          experienciaViagem: data?.experienciaViagem ?? "",
+          gostaDeFazer: data?.gostaDeFazer ?? "",
         });
         setStatus("ready");
       } catch {
@@ -83,7 +84,9 @@ export function ProfileDetailsForm() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setError("Sua sessao nao possui token do backend.");
       return;
     }
@@ -93,28 +96,22 @@ export function ProfileDetailsForm() {
     setSuccess(null);
 
     try {
-      const response = await fetch(`${backendUrl}/auth/me`, {
+      const response = await fetchBackend("/auth/me", {
         method: "PATCH",
+        token: backendAccessToken,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.backendAccessToken}`,
         },
-        body: JSON.stringify({
+        json: {
           sobreMim: form.sobreMim.trim() || undefined,
           personalidade: form.personalidade.trim() || undefined,
           experienciaViagem: form.experienciaViagem.trim() || undefined,
           gostaDeFazer: form.gostaDeFazer.trim() || undefined,
-        }),
+        },
       });
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as
-          | { message?: string | string[] }
-          | null;
-        const message = Array.isArray(data?.message)
-          ? data.message.join(", ")
-          : data?.message;
-        setError(message ?? "Nao foi possivel salvar o perfil.");
+        setError(await readApiErrorMessage(response, "Nao foi possivel salvar o perfil."));
         setStatus("ready");
         return;
       }

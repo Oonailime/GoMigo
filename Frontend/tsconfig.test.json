@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./.test-dist",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2021",
+    "isolatedModules": false,
+    "incremental": false
+  },
+  "include": [
+    "app/components/trip-itinerary-editor.helpers.ts",
+    "tests/**/*.ts"
+  ]
+}

@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import {
+  fetchBackend,
+  fetchBackendJson,
+  readApiErrorMessage,
+} from "../../lib/backend";
 import styles from "./trip-details.module.css";
-
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
 
 type PendingEvaluation = {
   tipo: "ORGANIZADOR" | "VIAJANTE";
@@ -51,7 +53,9 @@ export function TripEvaluationPanel({
   }, [organizer.id, organizer.name, travelers]);
 
   const loadPending = async () => {
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setStatus("hidden");
       return;
     }
@@ -60,36 +64,26 @@ export function TripEvaluationPanel({
     setError(null);
 
     try {
-      const response = await fetch(`${backendUrl}/avaliacoes/pendentes/${packageId}`, {
-        headers: {
-          Authorization: `Bearer ${session.backendAccessToken}`,
-        },
+      const { response, data } = await fetchBackendJson<{
+        avaliacoesPendentes: PendingEvaluation[];
+      }>(`/avaliacoes/pendentes/${packageId}`, {
+        token: backendAccessToken,
         cache: "no-store",
       });
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as
-          | { message?: string | string[] }
-          | null;
-        const message = Array.isArray(data?.message)
-          ? data.message.join(", ")
-          : data?.message;
-
         if (response.status === 403) {
           setStatus("hidden");
           return;
         }
 
         setStatus("error");
-        setError(message ?? "Nao foi possivel carregar as avaliacoes pendentes.");
+        setError(
+          await readApiErrorMessage(response, "Nao foi possivel carregar as avaliacoes pendentes."),
+        );
         return;
       }
-
-      const data = (await response.json()) as {
-        avaliacoesPendentes: PendingEvaluation[];
-      };
-
-      setPending(data.avaliacoesPendentes);
+      setPending(data?.avaliacoesPendentes ?? []);
       setStatus("ready");
     } catch {
       setStatus("error");
@@ -102,7 +96,9 @@ export function TripEvaluationPanel({
   }, [packageId, session?.backendAccessToken]);
 
   const submitEvaluation = async (evaluation: PendingEvaluation) => {
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setError("Sua sessao nao possui token do backend.");
       return;
     }
@@ -112,29 +108,23 @@ export function TripEvaluationPanel({
     setError(null);
 
     try {
-      const response = await fetch(`${backendUrl}/avaliacoes`, {
+      const response = await fetchBackend("/avaliacoes", {
         method: "POST",
+        token: backendAccessToken,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.backendAccessToken}`,
         },
-        body: JSON.stringify({
+        json: {
           tipo: evaluation.tipo,
           idPacoteViagem: packageId,
           idUserAvaliado: evaluation.idUserAvaliado,
           nota: score,
           comentario: comment.trim() || undefined,
-        }),
+        },
       });
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as
-          | { message?: string | string[] }
-          | null;
-        const message = Array.isArray(data?.message)
-          ? data.message.join(", ")
-          : data?.message;
-        setError(message ?? "Nao foi possivel enviar a avaliacao.");
+        setError(await readApiErrorMessage(response, "Nao foi possivel enviar a avaliacao."));
         return;
       }
 

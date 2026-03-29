@@ -4,11 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { fetchBackendJson } from "../lib/backend";
 import { useDismissibleLayer } from "./use-dismissible-layer";
 import styles from "./notification-bell.module.css";
-
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
 
 type NotificationPayload = {
   total: number;
@@ -60,7 +58,9 @@ export function NotificationBell() {
   });
 
   useEffect(() => {
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setData(null);
       return;
     }
@@ -69,18 +69,18 @@ export function NotificationBell() {
 
     const loadNotifications = async () => {
       try {
-        const response = await fetch(`${backendUrl}/solicitacoes/notificacoes`, {
-          headers: {
-            Authorization: `Bearer ${session.backendAccessToken}`,
+        const { response, data: payload } = await fetchBackendJson<NotificationPayload>(
+          "/solicitacoes/notificacoes",
+          {
+            token: backendAccessToken,
+            cache: "no-store",
           },
-          cache: "no-store",
-        });
+        );
 
-        if (!response.ok) {
+        if (!response.ok || !payload) {
           return;
         }
 
-        const payload = (await response.json()) as NotificationPayload;
         const readIds = readReadNotifications();
 
         if (active) {

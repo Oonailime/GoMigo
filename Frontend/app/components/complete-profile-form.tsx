@@ -3,10 +3,12 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import {
+  fetchBackend,
+  fetchBackendJson,
+  readApiErrorMessage,
+} from "../lib/backend";
 import styles from "./complete-profile-form.module.css";
-
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
 
 const digitsOnly = (value: string) => value.replace(/\D/g, "");
 
@@ -26,7 +28,9 @@ export function CompleteProfileForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (mode !== "edit" || !session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (mode !== "edit" || !backendAccessToken) {
       setIsLoadingProfile(false);
       return;
     }
@@ -38,10 +42,12 @@ export function CompleteProfileForm({
       setError(null);
 
       try {
-        const response = await fetch(`${backendUrl}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${session.backendAccessToken}`,
-          },
+        const { response, data } = await fetchBackendJson<{
+          name?: string | null;
+          cpf?: string | null;
+          phoneNumber?: string | null;
+        }>("/auth/me", {
+          token: backendAccessToken,
           cache: "no-store",
         });
 
@@ -49,19 +55,13 @@ export function CompleteProfileForm({
           throw new Error();
         }
 
-        const data = (await response.json()) as {
-          name?: string | null;
-          cpf?: string | null;
-          phoneNumber?: string | null;
-        };
-
         if (!active) {
           return;
         }
 
-        setName(data.name ?? session.user?.name ?? "");
-        setCpf(data.cpf ?? "");
-        setPhoneNumber(data.phoneNumber ?? "");
+        setName(data?.name ?? session.user?.name ?? "");
+        setCpf(data?.cpf ?? "");
+        setPhoneNumber(data?.phoneNumber ?? "");
       } catch {
         if (active) {
           setError("Nao foi possivel carregar seus dados atuais.");
@@ -83,7 +83,9 @@ export function CompleteProfileForm({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setError("Sua sessao expirou. Entre novamente com Google.");
       return;
     }
@@ -93,33 +95,25 @@ export function CompleteProfileForm({
     setSuccessMessage(null);
 
     try {
-      const response = await fetch(
-        `${backendUrl}${mode === "edit" ? "/auth/me" : "/auth/complete-profile"}`,
+      const response = await fetchBackend(
+        mode === "edit" ? "/auth/me" : "/auth/complete-profile",
         {
           method: mode === "edit" ? "PATCH" : "POST",
+          token: backendAccessToken,
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${session.backendAccessToken}`,
           },
-          body: JSON.stringify({
+          json: {
             name: name.trim() || undefined,
             cpf: digitsOnly(cpf),
             phoneNumber: digitsOnly(phoneNumber),
-          }),
+          },
         },
       );
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as
-          | { message?: string | string[] }
-          | null;
-
-        const message = Array.isArray(data?.message)
-          ? data.message.join(", ")
-          : data?.message;
-
         setError(
-          message ??
+          (await readApiErrorMessage(response, "")) ||
             (mode === "edit"
               ? "Nao foi possivel atualizar o perfil."
               : "Nao foi possivel concluir o cadastro."),

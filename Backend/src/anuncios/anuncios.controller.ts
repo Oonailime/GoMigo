@@ -1,4 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { CurrentUserId } from '../auth/current-user-id.decorator';
 import { CreateAnuncioDto } from './dto/create-anuncio.dto';
 import { UpdateAnuncioDto } from './dto/update-anuncio.dto';
 import { AnunciosService } from './anuncios.service';
@@ -8,8 +10,9 @@ export class AnunciosController {
   constructor(private readonly anunciosService: AnunciosService) {}
 
   @Post()
-  create(@Body() body: CreateAnuncioDto) {
-    return this.anunciosService.create(body);
+  @UseGuards(JwtAuthGuard)
+  create(@CurrentUserId() userId: number, @Body() body: CreateAnuncioDto) {
+    return this.anunciosService.create(userId, body);
   }
 
   @Get()
@@ -23,12 +26,14 @@ export class AnunciosController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateAnuncioDto) {
-    return this.anunciosService.update(id, body);
+  @UseGuards(JwtAuthGuard)
+  update(@CurrentUserId() userId: number, @Param('id', ParseIntPipe) id: number, @Body() body: UpdateAnuncioDto) {
+    return this.anunciosService.update(userId, id, body);
   }
 
   @Delete(':id')
-  delete(@Param('id', ParseIntPipe) id: number) {
-    return this.anunciosService.delete(id);
+  @UseGuards(JwtAuthGuard)
+  delete(@CurrentUserId() userId: number, @Param('id', ParseIntPipe) id: number) {
+    return this.anunciosService.delete(userId, id);
   }
 }

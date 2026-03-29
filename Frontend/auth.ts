@@ -1,10 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-
-const backendUrl =
-  process.env.BACKEND_URL ??
-  process.env.NEXT_PUBLIC_BACKEND_URL ??
-  "http://localhost:3001/api";
+import { serverBackendUrl } from "./app/lib/backend";
 
 function getJwtExp(token?: string) {
   if (!token) {
@@ -46,7 +42,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     async jwt({ token, account, trigger, session }) {
       const exchangeGoogleTokenForBackendAuth = async (idToken: string) => {
         try {
-          const response = await fetch(`${backendUrl}/auth/google`, {
+          const response = await fetch(`${serverBackendUrl}/auth/google`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ idToken }),

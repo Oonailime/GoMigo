@@ -2,12 +2,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AppHeaderActions } from "../../components/app-header-actions";
 import { TravelPackageForm } from "../../components/travel-package-form";
+import { fetchServerBackend } from "../../lib/backend";
 import styles from "./new.module.css";
-
-const backendUrl =
-  process.env.BACKEND_URL ??
-  process.env.NEXT_PUBLIC_BACKEND_URL ??
-  "http://localhost:3001/api";
 
 export default async function TravelPackageNewPage({
   searchParams,
@@ -32,10 +28,8 @@ export default async function TravelPackageNewPage({
   }
 
   if (editPackageId) {
-    const response = await fetch(`${backendUrl}/pacotes/${editPackageId}/gerenciar`, {
-      headers: {
-        Authorization: `Bearer ${session.backendAccessToken}`,
-      },
+    const response = await fetchServerBackend(`/pacotes/${editPackageId}/gerenciar`, {
+      token: session.backendAccessToken,
       cache: "no-store",
     });
 

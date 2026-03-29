@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { fetchBackendJson } from "../lib/backend";
 import styles from "./my-trips-panel.module.css";
-
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
 
 type TripItem = {
   id: number;
@@ -37,7 +35,9 @@ export function MyTripsPanel() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setStatus("error");
       setError("Sua sessao nao possui token do backend.");
       return;
@@ -50,18 +50,17 @@ export function MyTripsPanel() {
       setError(null);
 
       try {
-        const response = await fetch(`${backendUrl}/pacotes/minhas-viagens`, {
-          headers: {
-            Authorization: `Bearer ${session.backendAccessToken}`,
+        const { response, data: payload } = await fetchBackendJson<TripsResponse>(
+          "/pacotes/minhas-viagens",
+          {
+            token: backendAccessToken,
+            cache: "no-store",
           },
-          cache: "no-store",
-        });
+        );
 
-        if (!response.ok) {
+        if (!response.ok || !payload) {
           throw new Error();
         }
-
-        const payload = (await response.json()) as TripsResponse;
 
         if (active) {
           setData(payload);

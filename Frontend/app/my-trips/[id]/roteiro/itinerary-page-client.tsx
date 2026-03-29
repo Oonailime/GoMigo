@@ -8,9 +8,10 @@ import {
   TripItineraryEditor,
   type TripItineraryPayload,
 } from "../../../components/trip-itinerary-editor";
-
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
+import {
+  fetchBackend,
+  readApiErrorMessage,
+} from "../../../lib/backend";
 
 export function ItineraryPageClient({
   packageId,
@@ -38,23 +39,19 @@ export function ItineraryPageClient({
                 throw new Error("Sua sessao nao possui token do backend.");
               }
 
-              const response = await fetch(`${backendUrl}/pacotes/${packageId}/roteiro`, {
+              const response = await fetchBackend(`/pacotes/${packageId}/roteiro`, {
                 method: "PUT",
+                token: session.backendAccessToken,
                 headers: {
                   "Content-Type": "application/json",
-                  Authorization: `Bearer ${session.backendAccessToken}`,
                 },
-                body: JSON.stringify(serializeTripItineraryDraft(draft)),
+                json: serializeTripItineraryDraft(draft),
               });
 
               if (!response.ok) {
-                const data = (await response.json().catch(() => null)) as
-                  | { message?: string | string[] }
-                  | null;
-                const message = Array.isArray(data?.message)
-                  ? data.message.join(", ")
-                  : data?.message;
-                throw new Error(message ?? "Nao foi possivel salvar o roteiro.");
+                throw new Error(
+                  await readApiErrorMessage(response, "Nao foi possivel salvar o roteiro."),
+                );
               }
 
               router.refresh();

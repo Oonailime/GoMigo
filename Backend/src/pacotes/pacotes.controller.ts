@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, ParseIntPipe, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, ParseIntPipe, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { CurrentUserId } from '../auth/current-user-id.decorator';
 import { CreatePacoteDto } from './dto/create-pacote.dto';
 import { UpsertRoteiroDto } from './dto/upsert-roteiro.dto';
 import { UpdatePacoteDto } from './dto/update-pacote.dto';
@@ -13,16 +14,12 @@ export class PacotesController {
   @UseGuards(JwtAuthGuard)
   @Post()
   create(
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
     @Body() body: CreatePacoteDto,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
     return this.pacotesService.create({
       ...body,
-      idOrganizador: req.user.sub,
+      idOrganizador: userId,
     });
   }
 
@@ -33,75 +30,51 @@ export class PacotesController {
 
   @UseGuards(JwtAuthGuard)
   @Get('meus')
-  findMine(@Req() req: { user: { sub: number | null } }) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.pacotesService.findByOrganizador(req.user.sub);
+  findMine(@CurrentUserId() userId: number) {
+    return this.pacotesService.findByOrganizador(userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('minhas-viagens')
-  findMyTrips(@Req() req: { user: { sub: number | null } }) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.pacotesService.findTripsForUser(req.user.sub);
+  findMyTrips(@CurrentUserId() userId: number) {
+    return this.pacotesService.findTripsForUser(userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id/gerenciar')
   findOneForManagement(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.pacotesService.findOneForOrganizador(id, req.user.sub);
+    return this.pacotesService.findOneForOrganizador(id, userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id/detalhes')
   findOneForParticipant(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.pacotesService.findOneForParticipant(id, req.user.sub);
+    return this.pacotesService.findOneForParticipant(id, userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id/roteiro')
   findItinerary(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.pacotesService.findItineraryForParticipant(id, req.user.sub);
+    return this.pacotesService.findItineraryForParticipant(id, userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Put(':id/roteiro')
   upsertItinerary(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
     @Body() body: UpsertRoteiroDto,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.pacotesService.upsertItinerary(id, req.user.sub, body);
+    return this.pacotesService.upsertItinerary(id, userId, body);
   }
 
   @Get('search')
@@ -118,28 +91,20 @@ export class PacotesController {
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.pacotesService.findOneForParticipant(id, req.user.sub);
+    return this.pacotesService.findOneForParticipant(id, userId);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
     @Body() body: UpdatePacoteDto,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
     const pacote = await this.pacotesService.findOne(id);
-    if (pacote.idOrganizador !== req.user.sub) {
+    if (pacote.idOrganizador !== userId) {
       throw new UnauthorizedException('apenas o organizador pode editar o pacote');
     }
 
@@ -150,25 +115,17 @@ export class PacotesController {
   @UseGuards(JwtAuthGuard)
   delete(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.pacotesService.deleteForOrganizador(id, req.user.sub);
+    return this.pacotesService.deleteForOrganizador(id, userId);
   }
 
   @Delete(':id/reserva')
   @UseGuards(JwtAuthGuard)
   cancelReservation(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.pacotesService.cancelReservation(id, req.user.sub);
+    return this.pacotesService.cancelReservation(id, userId);
   }
 }

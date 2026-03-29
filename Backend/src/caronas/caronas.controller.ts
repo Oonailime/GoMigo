@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { CreateCaronaDto } from './dto/create-carona.dto';
 import { UpdateCaronaDto } from './dto/update-carona.dto';
+import { CurrentUserId } from '../auth/current-user-id.decorator';
 import { CaronasService } from './caronas.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 
@@ -11,14 +12,10 @@ export class CaronasController {
 
   @Post()
   create(
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
     @Body() body: CreateCaronaDto,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.caronasService.createForOrganizer(req.user.sub, {
+    return this.caronasService.createForOrganizer(userId, {
       idPacoteViagem: body.idPacoteViagem,
       idVeiculo: body.idVeiculo,
       dataIda: body.dataIda,
@@ -34,48 +31,32 @@ export class CaronasController {
   }
 
   @Get()
-  findAll(@Req() req: { user: { sub: number | null } }) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.caronasService.findByOrganizer(req.user.sub);
+  findAll(@CurrentUserId() userId: number) {
+    return this.caronasService.findByOrganizer(userId);
   }
 
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.caronasService.findOneForOrganizer(id, req.user.sub);
+    return this.caronasService.findOneForOrganizer(id, userId);
   }
 
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
     @Body() body: UpdateCaronaDto,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.caronasService.updateForOrganizer(id, req.user.sub, body);
+    return this.caronasService.updateForOrganizer(id, userId, body);
   }
 
   @Delete(':id')
   delete(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: { user: { sub: number | null } },
+    @CurrentUserId() userId: number,
   ) {
-    if (!req.user.sub) {
-      throw new UnauthorizedException('usuario sem perfil completo');
-    }
-
-    return this.caronasService.deleteForOrganizer(id, req.user.sub);
+    return this.caronasService.deleteForOrganizer(id, userId);
   }
 }

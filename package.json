@@ -19,6 +19,9 @@
     "dev": "concurrently -n front,back -c blue,green \"npm run dev:frontend\" \"npm run dev:backend\"",
     "build:frontend": "npm run build --workspace Frontend",
     "build:backend": "npm run build --workspace Backend",
+    "test:frontend": "npm run test --workspace Frontend",
+    "test:backend": "npm run test --workspace Backend",
+    "test": "npm run test:frontend && npm run test:backend",
     "postinstall": "node scripts/sync-prisma-effect.cjs"
   },
   "devDependencies": {

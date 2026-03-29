@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import {
+  fetchBackend,
+  fetchBackendJson,
+  readApiErrorMessage,
+} from "../lib/backend";
 import styles from "./my-packages-panel.module.css";
-
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001/api";
 
 type Solicitation = {
   id: number;
@@ -55,7 +57,9 @@ export function MyPackagesPanel() {
   );
 
   const loadPackages = async () => {
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setStatus("error");
       setError("Sua sessao nao possui token do backend.");
       return;
@@ -65,27 +69,18 @@ export function MyPackagesPanel() {
     setError(null);
 
     try {
-      const response = await fetch(`${backendUrl}/pacotes/meus`, {
-        headers: {
-          Authorization: `Bearer ${session.backendAccessToken}`,
-        },
+      const { response, data } = await fetchBackendJson<PackageItem[]>("/pacotes/meus", {
+        token: backendAccessToken,
         cache: "no-store",
       });
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as
-          | { message?: string | string[] }
-          | null;
-        const message = Array.isArray(data?.message)
-          ? data.message.join(", ")
-          : data?.message;
         setStatus("error");
-        setError(message ?? "Nao foi possivel carregar seus pacotes.");
+        setError(await readApiErrorMessage(response, "Nao foi possivel carregar seus pacotes."));
         return;
       }
 
-      const data = (await response.json()) as PackageItem[];
-      setPackages(data);
+      setPackages(data ?? []);
       setStatus("ready");
     } catch {
       setStatus("error");
@@ -101,7 +96,9 @@ export function MyPackagesPanel() {
     solicitationId: number,
     action: "aceitar" | "rejeitar",
   ) => {
-    if (!session?.backendAccessToken) {
+    const backendAccessToken = session?.backendAccessToken;
+
+    if (!backendAccessToken) {
       setError("Sua sessao nao possui token do backend.");
       return;
     }
@@ -110,29 +107,20 @@ export function MyPackagesPanel() {
     setError(null);
 
     try {
-      const response = await fetch(
-        `${backendUrl}/solicitacoes/${solicitationId}/${action}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.backendAccessToken}`,
-          },
-          body:
-            action === "rejeitar"
-              ? JSON.stringify({ motivoRecusa: "Solicitacao recusada pelo organizador." })
-              : JSON.stringify({}),
+      const response = await fetchBackend(`/solicitacoes/${solicitationId}/${action}`, {
+        method: "POST",
+        token: backendAccessToken,
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        json:
+          action === "rejeitar"
+            ? { motivoRecusa: "Solicitacao recusada pelo organizador." }
+            : {},
+      });
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as
-          | { message?: string | string[] }
-          | null;
-        const message = Array.isArray(data?.message)
-          ? data.message.join(", ")
-          : data?.message;
-        setError(message ?? "Nao foi possivel processar a solicitacao.");
+        setError(await readApiErrorMessage(response, "Nao foi possivel processar a solicitacao."));
         return;
       }
 
