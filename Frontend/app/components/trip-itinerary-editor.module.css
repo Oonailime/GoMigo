@@ -1,0 +1,206 @@
+.section {
+  display: grid;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+  color: var(--text);
+}
+
+.description {
+  margin: 8px 0 0;
+  color: var(--soft);
+  line-height: 1.6;
+}
+
+.saveButton,
+.addButton,
+.removeButton {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.saveButton,
+.addButton {
+  background: #f1ad49;
+  color: #081018;
+  font-weight: 700;
+  padding: 12px 16px;
+}
+
+.removeButton {
+  justify-self: flex-end;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  padding: 8px 12px;
+}
+
+.metaCard,
+.group,
+.timelineSection {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--panelStrong) 78%, transparent);
+  padding: 20px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 12px 14px;
+  font: inherit;
+}
+
+.textarea {
+  resize: vertical;
+}
+
+.groupHeader,
+.timelineHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.groupTitle,
+.timelineTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.groupHelper,
+.timelineItemMeta,
+.timelineItemText,
+.empty,
+.error,
+.success,
+.timelineCount {
+  margin: 0;
+  color: var(--soft);
+}
+
+.entryCard {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.twoColumn {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.timelineList {
+  display: grid;
+  gap: 12px;
+}
+
+.timelineItem {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.timelineKind {
+  align-self: flex-start;
+  border-radius: 999px;
+  background: rgba(241, 173, 73, 0.14);
+  color: #f1ad49;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.timelineItemTitle {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.input option {
+  color: #081018;
+}
+
+.error {
+  color: #f4a7a7;
+}
+
+.success {
+  color: #95d5a8;
+}
+
+:global(:root[data-theme="light"]) .metaCard,
+:global(:root[data-theme="light"]) .group,
+:global(:root[data-theme="light"]) .timelineSection {
+  background: rgba(17, 33, 49, 0.03);
+}
+
+:global(:root[data-theme="light"]) .input,
+:global(:root[data-theme="light"]) .textarea,
+:global(:root[data-theme="light"]) .entryCard,
+:global(:root[data-theme="light"]) .timelineItem,
+:global(:root[data-theme="light"]) .removeButton {
+  background: rgba(17, 33, 49, 0.04);
+}
+
+@media (max-width: 720px) {
+  .header,
+  .groupHeader,
+  .timelineHeader {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .saveButton,
+  .addButton {
+    width: 100%;
+  }
+
+  .timelineItem {
+    grid-template-columns: 1fr;
+  }
+}

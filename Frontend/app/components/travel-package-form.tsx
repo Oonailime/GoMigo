@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { CityAutocomplete } from "./city-autocomplete";
 import { DateRangeField } from "./date-range-field";
+import {
+  createEmptyTripItineraryDraft,
+  serializeTripItineraryDraft,
+  TripItineraryEditor,
+  type TripItineraryDraft,
+} from "./trip-itinerary-editor";
 import styles from "./travel-package-form.module.css";
 
 const backendUrl =
@@ -76,6 +82,10 @@ export function TravelPackageForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [itineraryDraft, setItineraryDraft] = useState<TripItineraryDraft>(
+    createEmptyTripItineraryDraft(),
+  );
+  const [itineraryVersion, setItineraryVersion] = useState(0);
 
   const updateField =
     (field: keyof TravelPackageFormState) =>
@@ -169,7 +179,45 @@ export function TravelPackageForm({
         return;
       }
 
+      const savedPackage = (await packageResponse.json()) as { id: number };
+
+      if (!editPackageId) {
+        const itineraryPayload = serializeTripItineraryDraft(itineraryDraft);
+        const hasInitialItinerary =
+          itineraryPayload.caronas.length > 0 ||
+          itineraryPayload.hospedagens.length > 0 ||
+          itineraryPayload.atividades.length > 0 ||
+          Boolean(itineraryPayload.descricao);
+
+        if (hasInitialItinerary) {
+          const itineraryResponse = await fetch(
+            `${backendUrl}/pacotes/${savedPackage.id}/roteiro`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.backendAccessToken}`,
+              },
+              body: JSON.stringify(itineraryPayload),
+            },
+          );
+
+          if (!itineraryResponse.ok) {
+            const data = (await itineraryResponse.json().catch(() => null)) as
+              | { message?: string | string[] }
+              | null;
+            const message = Array.isArray(data?.message)
+              ? data.message.join(", ")
+              : data?.message;
+            setError(message ?? "Pacote criado, mas nao foi possivel salvar o roteiro inicial.");
+            return;
+          }
+        }
+      }
+
       setFormState(initialState);
+      setItineraryDraft(createEmptyTripItineraryDraft());
+      setItineraryVersion((current) => current + 1);
       setSuccessMessage(
         editPackageId
           ? "Pacote atualizado com sucesso. Redirecionando..."
@@ -315,10 +363,22 @@ export function TravelPackageForm({
         />
       </label>
 
+      {!editPackageId ? (
+        <TripItineraryEditor
+          initialDraft={itineraryDraft}
+          version={itineraryVersion}
+          canEdit
+          title="Roteiro inicial da viagem"
+          description="Opcional. Antecipe caronas, hospedagem, passeios e alimentacao ja na criacao do pacote."
+          onChange={setItineraryDraft}
+        />
+      ) : null}
+
       {error ? <p className={styles.error}>{error}</p> : null}
       {successMessage ? <p className={styles.success}>{successMessage}</p> : null}
 
       <div className={styles.actions}>
+        {/*
         <button
           type="button"
           className={styles.secondaryButton}
@@ -327,6 +387,7 @@ export function TravelPackageForm({
         >
           Salvar rascunho
         </button>
+        */}
         <button
           type="submit"
           className={styles.primaryButton}

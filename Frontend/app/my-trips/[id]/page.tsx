@@ -119,6 +119,9 @@ export default async function MyTripDetailsPage({
             <Link href="/my-trips" className={styles.secondaryLink}>
               Voltar para minhas viagens
             </Link>
+            <Link href={`/my-trips/${trip.id}/roteiro`} className={styles.secondaryLink}>
+              Roteiro da viagem
+            </Link>
             {isOrganizer ? (
               <Link href={`/travel-package/new?edit=${trip.id}`} className={styles.primaryLink}>
                 Gerenciar pacote
