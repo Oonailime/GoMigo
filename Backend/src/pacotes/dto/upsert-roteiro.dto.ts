@@ -42,12 +42,6 @@ class ItineraryCaronaDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  vagasDisponiveis?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
   precoPorPessoa?: number;
 
   @IsOptional()

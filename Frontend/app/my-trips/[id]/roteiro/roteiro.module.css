@@ -1,7 +1,34 @@
 .page {
+  --line: rgba(154, 181, 214, 0.18);
+  --text: #f4f7fb;
+  --muted: rgba(228, 236, 248, 0.76);
+  --soft: rgba(228, 236, 248, 0.52);
+  --accent: #4ec7b0;
+  --accentWarm: #f1ad49;
+  --buttonText: #04131b;
+  --panelStrong: rgba(18, 34, 55, 0.985);
+  --panelMuted: rgba(255, 255, 255, 0.05);
   min-height: 100vh;
-  padding: 32px 20px 60px;
+  padding: 40px 20px 64px;
   color: var(--text);
+  background:
+    radial-gradient(circle at top, rgba(241, 173, 73, 0.14), transparent 34%),
+    linear-gradient(180deg, #08131c 0%, #102434 100%);
+}
+
+:global(:root[data-theme="light"]) .page {
+  --line: rgba(77, 61, 38, 0.14);
+  --text: #2b2218;
+  --muted: rgba(43, 34, 24, 0.72);
+  --soft: rgba(43, 34, 24, 0.48);
+  --accent: #146b63;
+  --accentWarm: #a86506;
+  --buttonText: #f7fbfa;
+  --panelStrong: rgba(255, 255, 255, 0.99);
+  --panelMuted: rgba(17, 33, 49, 0.04);
+  background:
+    radial-gradient(circle at top, rgba(20, 107, 99, 0.1), transparent 34%),
+    linear-gradient(180deg, #f4efe6 0%, #fbf6ee 100%);
 }
 
 .shell {
@@ -22,8 +49,8 @@
   display: inline-flex;
   padding: 7px 12px;
   border-radius: 999px;
-  background: rgba(241, 173, 73, 0.16);
-  color: #f1ad49;
+  background: color-mix(in srgb, var(--accentWarm) 16%, transparent);
+  color: var(--accentWarm);
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -39,7 +66,7 @@
 .subtitle {
   margin: 0;
   max-width: 720px;
-  color: var(--soft);
+  color: var(--muted);
   line-height: 1.6;
 }
 
@@ -67,8 +94,8 @@
 }
 
 .manageLink {
-  background: #f1ad49;
-  color: #081018;
+  background: var(--accentWarm);
+  color: var(--buttonText);
 }
 
 @media (max-width: 720px) {

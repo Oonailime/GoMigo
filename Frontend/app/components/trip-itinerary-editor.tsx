@@ -3,12 +3,16 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
 } from "react";
+import { DayPicker } from "react-day-picker";
+import fieldStyles from "../page.module.css";
 import styles from "./trip-itinerary-editor.module.css";
+import { useDismissibleLayer } from "./use-dismissible-layer";
 
 export type ItineraryCaronaDraft = {
   id?: number;
@@ -16,7 +20,6 @@ export type ItineraryCaronaDraft = {
   destino: string;
   dataIda: string;
   dataVolta: string;
-  vagasDisponiveis: string;
   precoPorPessoa: string;
   regrasCarona: string;
   status: string;
@@ -69,7 +72,6 @@ export type TripItineraryPayload = {
     destino?: string | null;
     dataIda?: string | null;
     dataVolta?: string | null;
-    vagasDisponiveis?: number | null;
     precoPorPessoa?: number | null;
     regrasCarona: string;
     status: string;
@@ -110,7 +112,6 @@ function createEmptyCarona(): ItineraryCaronaDraft {
     destino: "",
     dataIda: "",
     dataVolta: "",
-    vagasDisponiveis: "",
     precoPorPessoa: "",
     regrasCarona: "",
     status: "PLANEJADA",
@@ -170,8 +171,6 @@ export function mapPayloadToTripItineraryDraft(
         destino: item.destino ?? "",
         dataIda: item.dataIda ? toDateTimeLocal(item.dataIda) : "",
         dataVolta: item.dataVolta ? toDateTimeLocal(item.dataVolta) : "",
-        vagasDisponiveis:
-          typeof item.vagasDisponiveis === "number" ? String(item.vagasDisponiveis) : "",
         precoPorPessoa:
           typeof item.precoPorPessoa === "number" ? String(item.precoPorPessoa) : "",
         regrasCarona: item.regrasCarona ?? "",
@@ -215,7 +214,6 @@ export function serializeTripItineraryDraft(draft: TripItineraryDraft) {
         destino: item.destino.trim() || undefined,
         dataIda: item.dataIda || undefined,
         dataVolta: item.dataVolta || undefined,
-        vagasDisponiveis: item.vagasDisponiveis ? Number(item.vagasDisponiveis) : undefined,
         precoPorPessoa: item.precoPorPessoa ? Math.round(Number(item.precoPorPessoa)) : undefined,
         regrasCarona: item.regrasCarona.trim() || undefined,
         status: item.status.trim() || undefined,
@@ -418,9 +416,8 @@ export function TripItineraryEditor({
                 <TwoColumnFields>
                   <InputField label="Origem" value={item.origem} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "caronas", index, "origem", value)} />
                   <InputField label="Destino" value={item.destino} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "caronas", index, "destino", value)} />
-                  <InputField label="Data/hora de ida" type="datetime-local" value={item.dataIda} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "caronas", index, "dataIda", value)} />
-                  <InputField label="Data/hora de volta" type="datetime-local" value={item.dataVolta} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "caronas", index, "dataVolta", value)} />
-                  <InputField label="Vagas disponiveis" type="number" value={item.vagasDisponiveis} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "caronas", index, "vagasDisponiveis", value)} />
+                  <DateTimeField label="Data/hora de ida" value={item.dataIda} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "caronas", index, "dataIda", value)} />
+                  <DateTimeField label="Data/hora de volta" value={item.dataVolta} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "caronas", index, "dataVolta", value)} />
                   <InputField label="Preco por pessoa" type="number" value={item.precoPorPessoa} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "caronas", index, "precoPorPessoa", value)} />
                 </TwoColumnFields>
                 <TextAreaField label="Regras da carona" value={item.regrasCarona} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "caronas", index, "regrasCarona", value)} />
@@ -462,8 +459,8 @@ export function TripItineraryEditor({
                 <TwoColumnFields>
                   <InputField label="Local" value={item.nomeLocal} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "hospedagens", index, "nomeLocal", value)} />
                   <InputField label="Cidade/estado" value={item.local} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "hospedagens", index, "local", value)} />
-                  <InputField label="Check-in" type="datetime-local" value={item.dataCheckin} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "hospedagens", index, "dataCheckin", value)} />
-                  <InputField label="Checkout" type="datetime-local" value={item.dataCheckout} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "hospedagens", index, "dataCheckout", value)} />
+                  <DateTimeField label="Check-in" value={item.dataCheckin} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "hospedagens", index, "dataCheckin", value)} />
+                  <DateTimeField label="Checkout" value={item.dataCheckout} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "hospedagens", index, "dataCheckout", value)} />
                   <InputField label="Preco por pessoa" type="number" value={item.precoPorPessoa} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "hospedagens", index, "precoPorPessoa", value)} />
                 </TwoColumnFields>
                 <TextAreaField label="Regras da hospedagem" value={item.regrasHospedagem} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "hospedagens", index, "regrasHospedagem", value)} />
@@ -524,8 +521,8 @@ export function TripItineraryEditor({
                     </select>
                   </label>
                   <InputField label="Titulo" value={item.titulo} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "atividades", index, "titulo", value)} />
-                  <InputField label="Inicio" type="datetime-local" value={item.dataHoraInicio} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "atividades", index, "dataHoraInicio", value)} />
-                  <InputField label="Fim" type="datetime-local" value={item.dataHoraFim} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "atividades", index, "dataHoraFim", value)} />
+                  <DateTimeField label="Inicio" value={item.dataHoraInicio} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "atividades", index, "dataHoraInicio", value)} />
+                  <DateTimeField label="Fim" value={item.dataHoraFim} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "atividades", index, "dataHoraFim", value)} />
                   <InputField label="Local" value={item.local} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "atividades", index, "local", value)} />
                   <InputField label="Preco" type="number" value={item.preco} disabled={!canEdit} onChange={(value) => updateArrayField(setDraft, "atividades", index, "preco", value)} />
                 </TwoColumnFields>
@@ -627,6 +624,138 @@ function InputField({
   );
 }
 
+function DateTimeField({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const selectedDate = getDatePart(value);
+  const selectedTime = getTimePart(value);
+
+  useDismissibleLayer({
+    isOpen,
+    containerRef,
+    onDismiss: () => setIsOpen(false),
+  });
+
+  const handleDateSelect = (date?: Date) => {
+    onChange(mergeDateTime(toDateInputValue(date), selectedTime));
+  };
+
+  const handleTimeChange = (nextTime: string) => {
+    onChange(mergeDateTime(selectedDate, nextTime));
+  };
+
+  return (
+    <label className={styles.dateTimeField}>
+      <span className={styles.label}>{label}</span>
+      <div className={styles.dateTimeShell} ref={containerRef}>
+        <button
+          type="button"
+          className={styles.dateTimeTrigger}
+          onClick={() => {
+            if (!disabled) {
+              setIsOpen((currentValue) => !currentValue);
+            }
+          }}
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+          disabled={disabled}
+        >
+          <span className={value ? styles.dateTimeValue : styles.dateTimePlaceholder}>
+            {value ? formatDateTime(value) : "Selecionar data e horario"}
+          </span>
+          <span className={styles.dateTimeBadge}>Calendario</span>
+        </button>
+
+        {isOpen ? (
+          <div className={styles.dateTimePanel} role="dialog" aria-label={label}>
+            <div className={styles.dateTimePanelHeader}>
+              <div>
+                <p className={styles.dateTimePanelTitle}>{label}</p>
+                <p className={styles.dateTimeHint}>Escolha a data e ajuste o horario.</p>
+              </div>
+            </div>
+
+            <DayPicker
+              mode="single"
+              selected={selectedDate ? parseDateValue(selectedDate) : undefined}
+              defaultMonth={selectedDate ? parseDateValue(selectedDate) : new Date()}
+              onSelect={handleDateSelect}
+              weekStartsOn={0}
+              showOutsideDays
+              className={styles.dateTimePicker}
+              classNames={{
+                months: styles.dateTimeMonths,
+                month: styles.dateTimeMonth,
+                month_caption: styles.dateTimeMonthCaption,
+                caption_label: styles.dateTimeCaptionLabel,
+                nav: styles.dateTimeNav,
+                button_previous: styles.dateTimeNavButton,
+                button_next: styles.dateTimeNavButton,
+                weekdays: styles.dateTimeWeekdays,
+                weekday: styles.dateTimeWeekday,
+                week: styles.dateTimeWeek,
+                day: styles.dateTimeDay,
+                day_button: styles.dateTimeDayButton,
+                selected: styles.dateTimeSelected,
+                outside: styles.dateTimeOutside,
+                today: styles.dateTimeToday,
+                disabled: styles.dateTimeDisabled,
+              }}
+              formatters={{
+                formatCaption: (date) =>
+                  new Intl.DateTimeFormat("pt-BR", {
+                    month: "long",
+                    year: "numeric",
+                  }).format(date),
+                formatWeekdayName: (date) =>
+                  new Intl.DateTimeFormat("pt-BR", {
+                    weekday: "short",
+                  })
+                    .format(date)
+                    .replace(".", ""),
+              }}
+            />
+
+            <div className={styles.timeRow}>
+              <span className={fieldStyles.fieldLabel}>Horario</span>
+              <input
+                className={styles.input}
+                type="time"
+                step="60"
+                value={selectedTime}
+                onChange={(event) => handleTimeChange(event.target.value)}
+              />
+            </div>
+
+            <div className={styles.dateTimePanelFooter}>
+              <span className={styles.dateTimeHint}>
+                {selectedDate ? formatDateLabel(selectedDate) : "Nenhuma data escolhida"}
+              </span>
+              <button
+                type="button"
+                className={styles.dateTimeClose}
+                onClick={() => setIsOpen(false)}
+              >
+                Aplicar
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </label>
+  );
+}
+
 function TextAreaField({
   label,
   value,
@@ -675,6 +804,46 @@ function formatDateTime(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function formatDateLabel(value: string) {
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) {
+    return "Nenhuma data escolhida";
+  }
+
+  return `${day}/${month}/${year}`;
+}
+
+function parseDateValue(value: string) {
+  return new Date(`${value}T12:00:00`);
+}
+
+function getDatePart(value: string) {
+  return value.includes("T") ? value.slice(0, 10) : "";
+}
+
+function getTimePart(value: string) {
+  return value.includes("T") ? value.slice(11, 16) : "";
+}
+
+function mergeDateTime(date: string, time: string) {
+  if (!date) {
+    return "";
+  }
+
+  return `${date}T${time || "00:00"}`;
+}
+
+function toDateInputValue(date?: Date) {
+  if (!date) {
+    return "";
+  }
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function toDateTimeLocal(value: string) {

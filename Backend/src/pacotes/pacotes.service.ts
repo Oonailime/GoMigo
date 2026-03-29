@@ -398,7 +398,6 @@ export class PacotesService {
         destino: item.enderecoDestino ? formatCityLabel(item.enderecoDestino) : null,
         dataIda: item.dataIda?.toISOString() ?? null,
         dataVolta: item.dataVolta?.toISOString() ?? null,
-        vagasDisponiveis: item.vagasDisponiveis ?? null,
         precoPorPessoa: item.precoPorPessoa ?? null,
         regrasCarona: item.regrasCarona,
         status: item.status,
@@ -493,7 +492,6 @@ export class PacotesService {
           idEnderecoPartida: await this.getOrCreateEnderecoId(tx, item.origem),
           idEnderecoDestino: await this.getOrCreateEnderecoId(tx, item.destino),
           regrasCarona: item.regrasCarona?.trim() || 'Horarios e regras a combinar.',
-          vagasDisponiveis: item.vagasDisponiveis ?? null,
           status: item.status?.trim() || 'PLANEJADA',
         };
 
@@ -804,5 +802,9 @@ function formatCityLabel(value?: { cidade?: string | null; estado?: string | nul
     return 'Local a definir';
   }
 
-  return value.estado ? `${value.cidade} - ${value.estado}` : value.cidade;
+  if (!value.estado || value.estado === 'Nao informado') {
+    return value.cidade;
+  }
+
+  return `${value.cidade} - ${value.estado}`;
 }
