@@ -17,7 +17,7 @@ const displayFont = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: "GoMigo",
-  description: "Plataforma para organizar caronas, hospedagem e eventos turisticos.",
+  description: "Plataforma para organizar caronas, hospedagem e passeios turisticos.",
   icons: {
     icon: "/logo_GoMigo.png",
     shortcut: "/logo_GoMigo.png",

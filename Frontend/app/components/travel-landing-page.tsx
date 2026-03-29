@@ -9,17 +9,16 @@ export function TravelLandingPage() {
         <div className={styles.heroSection}>
           <div className={styles.heroBrand}>
             <span className={styles.brandBadge}>GoMigo</span>
-            <p className={styles.eyebrow}>Organizacao de viagens em grupo</p>
+            <p className={styles.eyebrow}>Organização de viagens em grupo</p>
           </div>
 
           <div className={styles.heroContent}>
             <h1 className={styles.heroTitle}>
-              Planeje rotas, hospedagem e passeios em um so lugar.
+              Planeje rotas, hospedagem e passeios em um só lugar.
             </h1>
             <p className={styles.heroDescription}>
-              Um SaaS para viagens compartilhadas, inspirado na logica de
-              caronas, mas ampliado para conectar pessoas, acomodacoes e
-              experiencias turisticas com menos friccao.
+              Um sistema para viagens compartilhadas, inspirado no sonho de conectar pessoas, acomodacoes e passeios para
+              experiencias turísticas com mais união.
             </p>
             <div className={styles.heroActions}>
               <Link href="/travel-package/new" className={styles.buttonPrimary}>
@@ -31,13 +30,13 @@ export function TravelLandingPage() {
           <div className={styles.heroInsights}>
             <div className={styles.statsGrid}>
               <article className={styles.statCard}>
-                <strong className={styles.statValue}>+120</strong>
+                <strong className={styles.statValue}>+***</strong>
                 <span className={styles.statLabel}>
                   rotas e caronas organizadas por semana
                 </span>
               </article>
               <article className={styles.statCard}>
-                <strong className={styles.statValue}>48h</strong>
+                <strong className={styles.statValue}>**h</strong>
                 <span className={styles.statLabel}>
                   para fechar hospedagem e agenda do grupo
                 </span>
@@ -45,7 +44,7 @@ export function TravelLandingPage() {
               <article className={styles.statCard}>
                 <strong className={styles.statValue}>1 painel</strong>
                 <span className={styles.statLabel}>
-                  para motoristas, viajantes e parceiros locais
+                  para organização de transportes, hospedagem, passeios, guias e experiências locais
                 </span>
               </article>
             </div>
@@ -60,13 +59,13 @@ export function TravelLandingPage() {
               <article className={styles.featureCard}>
                 <strong className={styles.featureTitle}>Hospedagem</strong>
                 <span className={styles.featureText}>
-                  Compare opcoes, distribua quartos e acompanhe reservas.
+                  Compare opções, distribua quartos e acompanhe reservas.
                 </span>
               </article>
               <article className={styles.featureCard}>
-                <strong className={styles.featureTitle}>Eventos</strong>
+                <strong className={styles.featureTitle}>Passeios</strong>
                 <span className={styles.featureText}>
-                  Monte roteiros com passeios, guias e experiencias locais.
+                  Monte roteiros com turismos, guias e experiências locais.
                 </span>
               </article>
             </div>
