@@ -6,9 +6,33 @@ const backendUrl =
   process.env.NEXT_PUBLIC_BACKEND_URL ??
   "http://localhost:3001/api";
 
+function getJwtExp(token?: string) {
+  if (!token) {
+    return undefined;
+  }
+
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) {
+      return undefined;
+    }
+
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = JSON.parse(Buffer.from(normalized, "base64").toString("utf8")) as {
+      exp?: number;
+    };
+
+    return typeof decoded.exp === "number" ? decoded.exp : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export const { auth, handlers, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
-  trustHost: true,
+  trustHost:
+    process.env.AUTH_TRUST_HOST === "true" ||
+    process.env.NODE_ENV !== "production",
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
@@ -57,6 +81,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
       if (account?.id_token) {
         token.googleIdToken = account.id_token;
+        token.googleIdTokenExp = getJwtExp(account.id_token);
         token.backendAccessToken = undefined;
         token.backendUserStatus = undefined;
         token.backendUserId = undefined;
@@ -70,7 +95,19 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         }
 
         if (session.refreshBackendAuth && token.googleIdToken) {
-          await exchangeGoogleTokenForBackendAuth(token.googleIdToken);
+          const nowInSeconds = Math.floor(Date.now() / 1000);
+          const googleTokenStillValid =
+            typeof token.googleIdTokenExp === "number" &&
+            token.googleIdTokenExp > nowInSeconds + 60;
+
+          if (googleTokenStillValid) {
+            await exchangeGoogleTokenForBackendAuth(token.googleIdToken);
+          } else {
+            token.backendAccessToken = undefined;
+            token.backendUserStatus = undefined;
+            token.backendUserId = undefined;
+            token.backendAuthError = "BACKEND_AUTH_FAILED";
+          }
         }
 
         if (session.backendAccessToken !== undefined) {

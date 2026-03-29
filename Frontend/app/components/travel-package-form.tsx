@@ -122,12 +122,18 @@ export function TravelPackageForm({
       const [originResponse, destinationResponse] = await Promise.all([
         fetch(`${backendUrl}/enderecos`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.backendAccessToken}`,
+          },
           body: JSON.stringify(createAddressPayload(formState.origin)),
         }),
         fetch(`${backendUrl}/enderecos`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.backendAccessToken}`,
+          },
           body: JSON.stringify(createAddressPayload(formState.destination)),
         }),
       ]);

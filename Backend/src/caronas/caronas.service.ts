@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -23,8 +23,62 @@ export class CaronasService {
     return this.prisma.carona.create({ data });
   }
 
+  private async ensureOrganizerOwnsPackage(idPacoteViagem: number, idOrganizador: number) {
+    const pacote = await this.prisma.pacoteViagem.findUnique({
+      where: { id: idPacoteViagem },
+      select: { id: true, idOrganizador: true },
+    });
+
+    if (!pacote) {
+      throw new NotFoundException('pacote nao encontrado');
+    }
+
+    if (pacote.idOrganizador !== idOrganizador) {
+      throw new ForbiddenException('apenas o organizador do pacote pode gerenciar caronas');
+    }
+
+    return pacote;
+  }
+
+  async createForOrganizer(
+    idOrganizador: number,
+    data: {
+      idPacoteViagem: number;
+      idVeiculo?: number;
+      dataIda?: Date;
+      dataVolta?: Date;
+      precoTotal?: number;
+      precoPorPessoa?: number;
+      idEnderecoPartida?: number;
+      idEnderecoDestino?: number;
+      regrasCarona: string;
+      vagasDisponiveis?: number;
+      status: string;
+    },
+  ) {
+    await this.ensureOrganizerOwnsPackage(data.idPacoteViagem, idOrganizador);
+
+    return this.prisma.carona.create({
+      data: {
+        ...data,
+        idMotorista: idOrganizador,
+      },
+    });
+  }
+
   async findAll() {
     return this.prisma.carona.findMany();
+  }
+
+  async findByOrganizer(idOrganizador: number) {
+    return this.prisma.carona.findMany({
+      where: {
+        pacoteViagem: {
+          idOrganizador,
+        },
+      },
+      orderBy: { id: 'desc' },
+    });
   }
 
   async findOne(id: number) {
@@ -35,6 +89,29 @@ export class CaronasService {
     const carona = await this.prisma.carona.findUnique({ where: { id } });
     if (!carona) {
       throw new NotFoundException('carona nao encontrada');
+    }
+
+    return carona;
+  }
+
+  async findOneForOrganizer(id: number, idOrganizador: number) {
+    const carona = await this.prisma.carona.findUnique({
+      where: { id },
+      include: {
+        pacoteViagem: {
+          select: {
+            idOrganizador: true,
+          },
+        },
+      },
+    });
+
+    if (!carona) {
+      throw new NotFoundException('carona nao encontrada');
+    }
+
+    if (carona.pacoteViagem.idOrganizador !== idOrganizador) {
+      throw new ForbiddenException('usuario nao pode acessar esta carona');
     }
 
     return carona;
@@ -69,6 +146,26 @@ export class CaronasService {
     }
   }
 
+  async updateForOrganizer(
+    id: number,
+    idOrganizador: number,
+    data: Partial<{
+      idVeiculo?: number;
+      dataIda?: Date;
+      dataVolta?: Date;
+      precoTotal?: number;
+      precoPorPessoa?: number;
+      idEnderecoPartida?: number;
+      idEnderecoDestino?: number;
+      regrasCarona: string;
+      vagasDisponiveis?: number;
+      status: string;
+    }>,
+  ) {
+    await this.findOneForOrganizer(id, idOrganizador);
+    return this.update(id, data);
+  }
+
   async delete(id: number) {
     if (!id || Number.isNaN(id)) {
       throw new BadRequestException('id invalido');
@@ -82,5 +179,10 @@ export class CaronasService {
       }
       throw error;
     }
+  }
+
+  async deleteForOrganizer(id: number, idOrganizador: number) {
+    await this.findOneForOrganizer(id, idOrganizador);
+    return this.delete(id);
   }
 }

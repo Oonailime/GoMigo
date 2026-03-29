@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -18,8 +18,34 @@ export class VeiculosService {
     return this.prisma.veiculo.create({ data });
   }
 
+  async createForOwner(
+    idUserProprietario: number,
+    data: {
+      marca: string;
+      modelo: string;
+      cor?: string;
+      placa: string;
+      ano?: number;
+      capacidadePassageiros: number;
+    },
+  ) {
+    return this.prisma.veiculo.create({
+      data: {
+        ...data,
+        idUserProprietario,
+      },
+    });
+  }
+
   async findAll() {
     return this.prisma.veiculo.findMany();
+  }
+
+  async findByOwner(idUserProprietario: number) {
+    return this.prisma.veiculo.findMany({
+      where: { idUserProprietario },
+      orderBy: { id: 'desc' },
+    });
   }
 
   async findOne(id: number) {
@@ -30,6 +56,16 @@ export class VeiculosService {
     const veiculo = await this.prisma.veiculo.findUnique({ where: { id } });
     if (!veiculo) {
       throw new NotFoundException('veiculo nao encontrado');
+    }
+
+    return veiculo;
+  }
+
+  async findOneForOwner(id: number, idUserProprietario: number) {
+    const veiculo = await this.findOne(id);
+
+    if (veiculo.idUserProprietario !== idUserProprietario) {
+      throw new ForbiddenException('usuario nao pode acessar este veiculo');
     }
 
     return veiculo;
@@ -60,6 +96,22 @@ export class VeiculosService {
     }
   }
 
+  async updateForOwner(
+    id: number,
+    idUserProprietario: number,
+    data: Partial<{
+      marca: string;
+      modelo: string;
+      cor?: string;
+      placa: string;
+      ano?: number;
+      capacidadePassageiros: number;
+    }>,
+  ) {
+    await this.findOneForOwner(id, idUserProprietario);
+    return this.update(id, data);
+  }
+
   async delete(id: number) {
     if (!id || Number.isNaN(id)) {
       throw new BadRequestException('id invalido');
@@ -73,5 +125,10 @@ export class VeiculosService {
       }
       throw error;
     }
+  }
+
+  async deleteForOwner(id: number, idUserProprietario: number) {
+    await this.findOneForOwner(id, idUserProprietario);
+    return this.delete(id);
   }
 }

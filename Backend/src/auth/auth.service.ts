@@ -1,7 +1,5 @@
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { config as loadEnv } from 'dotenv';
+import { Prisma } from '@prisma/client';
 import { OAuth2Client } from 'google-auth-library';
 import * as jwt from 'jsonwebtoken';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,19 +8,41 @@ import { PrismaService } from '../prisma/prisma.service';
 export class AuthService {
   private readonly googleClient: OAuth2Client | null;
 
+  private async findProfileByEmail(email: string) {
+    const [user] = await this.prisma.$queryRaw<
+      Array<{
+        id: number;
+        name: string;
+        cpf: string;
+        phoneNumber: string;
+        email: string;
+        status: string;
+        sobreMim: string | null;
+        personalidade: string | null;
+        experienciaViagem: string | null;
+        gostaDeFazer: string | null;
+      }>
+    >(Prisma.sql`
+      SELECT
+        id,
+        name,
+        cpf,
+        "phoneNumber",
+        email,
+        status,
+        "sobreMim",
+        personalidade,
+        "experienciaViagem",
+        "gostaDeFazer"
+      FROM "tbUser"
+      WHERE email = ${email}
+      LIMIT 1
+    `);
+
+    return user ?? null;
+  }
+
   constructor(private readonly prisma: PrismaService) {
-    const envCandidates = [
-      resolve(__dirname, '..', '..', '.env'),
-      resolve(process.cwd(), '.env'),
-      resolve(process.cwd(), 'Backend', '.env'),
-    ];
-
-    for (const envPath of envCandidates) {
-      if (existsSync(envPath)) {
-        loadEnv({ path: envPath, override: false });
-      }
-    }
-
     const clientId = process.env.GOOGLE_CLIENT_ID;
     this.googleClient = clientId ? new OAuth2Client(clientId) : null;
   }
@@ -66,13 +86,6 @@ export class AuthService {
       });
 
       const payload = ticket.getPayload();
-      console.log('[auth][google] validating token', {
-        requiredAudience: process.env.GOOGLE_CLIENT_ID,
-        tokenAudience: payload?.aud ?? null,
-        authorizedParty: payload?.azp ?? null,
-        issuer: payload?.iss ?? null,
-        email: payload?.email ?? null,
-      });
 
       if (!payload?.email) {
         throw new UnauthorizedException('token invalido');
@@ -92,10 +105,6 @@ export class AuthService {
 
       return { accessToken, userStatus, userId: user?.id ?? null };
     } catch (error) {
-      console.error('[auth][google] login failed', {
-        message: error instanceof Error ? error.message : String(error),
-      });
-
       if (error instanceof UnauthorizedException) {
         throw error;
       }
@@ -149,36 +158,7 @@ export class AuthService {
       throw new BadRequestException('email invalido');
     }
 
-    const [user] = await this.prisma.$queryRawUnsafe<
-      Array<{
-        id: number;
-        name: string;
-        cpf: string;
-        phoneNumber: string;
-        email: string;
-        status: string;
-        sobreMim: string | null;
-        personalidade: string | null;
-        experienciaViagem: string | null;
-        gostaDeFazer: string | null;
-      }>
-    >(
-      `SELECT
-        id,
-        name,
-        cpf,
-        "phoneNumber",
-        email,
-        status,
-        "sobreMim",
-        personalidade,
-        "experienciaViagem",
-        "gostaDeFazer"
-      FROM "tbUser"
-      WHERE email = $1
-      LIMIT 1`,
-      email,
-    );
+    const user = await this.findProfileByEmail(email);
 
     if (!user) {
       throw new UnauthorizedException('usuario nao encontrado');
@@ -250,7 +230,7 @@ export class AuthService {
       throw new UnauthorizedException('usuario nao encontrado');
     }
 
-    const [updated] = await this.prisma.$queryRawUnsafe<
+    const [updated] = await this.prisma.$queryRaw<
       Array<{
         id: number;
         name: string;
@@ -263,17 +243,17 @@ export class AuthService {
         experienciaViagem: string | null;
         gostaDeFazer: string | null;
       }>
-    >(
-      `UPDATE "tbUser"
+    >(Prisma.sql`
+      UPDATE "tbUser"
       SET
-        name = $1,
-        cpf = $2,
-        "phoneNumber" = $3,
-        "sobreMim" = $4,
-        personalidade = $5,
-        "experienciaViagem" = $6,
-        "gostaDeFazer" = $7
-      WHERE email = $8
+        name = ${data.name ?? user.name},
+        cpf = ${data.cpf ?? user.cpf},
+        "phoneNumber" = ${data.phoneNumber ?? user.phoneNumber},
+        "sobreMim" = ${data.sobreMim ?? user.sobreMim},
+        personalidade = ${data.personalidade ?? user.personalidade},
+        "experienciaViagem" = ${data.experienciaViagem ?? user.experienciaViagem},
+        "gostaDeFazer" = ${data.gostaDeFazer ?? user.gostaDeFazer}
+      WHERE email = ${email}
       RETURNING
         id,
         name,
@@ -284,16 +264,8 @@ export class AuthService {
         "sobreMim",
         personalidade,
         "experienciaViagem",
-        "gostaDeFazer"`,
-      data.name ?? user.name,
-      data.cpf ?? user.cpf,
-      data.phoneNumber ?? user.phoneNumber,
-      data.sobreMim ?? user.sobreMim,
-      data.personalidade ?? user.personalidade,
-      data.experienciaViagem ?? user.experienciaViagem,
-      data.gostaDeFazer ?? user.gostaDeFazer,
-      email,
-    );
+        "gostaDeFazer"
+    `);
 
     return updated;
   }
